@@ -22,13 +22,32 @@ class App extends Component {
           "id" : 3,
           "batteryLevel" : 100,
           "locationCode" : 3333
+        },
+        {
+          "id" : 4,
+          "batteryLevel" : 75,
+          "locationCode" : 4444
+        },
+        {
+          "id" : 5,
+          "batteryLevel" : 75,
+          "locationCode" : 5555
+        },
+        {
+          "id" : 6,
+          "batteryLevel" : 75,
+          "locationCode" : 6666
+        },
+        {
+          "id" : 7,
+          "batteryLevel" : 75,
+          "locationCode" : 7777
         }
       ]
     }
   }
   render(){
     return (
-      <div>
         <Container>
           <Row>
             <div className="jumbotron text-left">
@@ -36,24 +55,21 @@ class App extends Component {
               <p>Here you can monitor your things</p>
             </div>
           </Row>
-          <Row md="auto">
-            <div>
+          <Row fluid>
               {this.state.data.map((item) => {
-                return( 
+                return(
                   <Col key={item.id}>
-                    <div>
-                      <Extinguisher  
-                      id={item.id} 
-                      batteryLevel={item.batteryLevel} 
+                    <p>
+                      <Extinguisher
+                      id={item.id}
+                      batteryLevel={item.batteryLevel}
                       locationCode={item.locationCode}/>
-                    </div>
+                    </p>
                   </Col>
                 )}
               )}
-            </div>
           </Row>
         </Container>
-      </div>
     );
   }
 }

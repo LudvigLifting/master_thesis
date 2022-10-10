@@ -8,7 +8,7 @@ export default class Extinguisher extends Component {
   render() {
     return (
       <Card 
-        style={{width: '18rem'}}
+        style={{width: '16rem'}}
         bg={'light'}>
         <Card.Header> id: {this.props.id} </Card.Header>
         <Card.Body>
@@ -28,12 +28,14 @@ export default class Extinguisher extends Component {
             <ListGroup.Item>
               <div>
                 Battery status:
-                <ProgressBar animated now={this.props.batteryLevel}></ProgressBar>
+                <ProgressBar animated variant="success" now={this.props.batteryLevel} label={`${this.props.batteryLevel}%`}></ProgressBar>
               </div>
             </ListGroup.Item>
           </ListGroup>
         </Card.Body>
-        <Card.Footer> Last updated: {} </Card.Footer>
+        <Card.Footer> 
+            Last updated: {}
+        </Card.Footer>
       </Card>
     )
   }
