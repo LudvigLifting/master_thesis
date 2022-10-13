@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 import os
 
 def main():
-    dir_path = "/home/exjobb/code/master_thesis/image_processing"
+    dir_path = "/home/exjobb/code/master_thesis/image_processing/pictures"
     files = [
         "/test_color50x50.jpg",
         "/test_color100x100.jpg",
