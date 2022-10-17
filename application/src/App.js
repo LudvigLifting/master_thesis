@@ -2,6 +2,7 @@ import React, { useState, Component } from "react";
 import Extinguisher from "./Extinguisher";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Row, Col } from "react-bootstrap";
+import { v4 as uuid } from 'uuid';
 
 class App extends Component {
   constructor(props){
@@ -9,37 +10,30 @@ class App extends Component {
     this.state = {
       data : [
         {
-          "id" : 1,
           "batteryLevel" : 10,
           "locationCode" : 1111
         },
         {
-          "id" : 2,
           "batteryLevel" : 50,
           "locationCode" : 2222
         },
         {
-          "id" : 3,
           "batteryLevel" : 100,
           "locationCode" : 3333
         },
         {
-          "id" : 4,
           "batteryLevel" : 75,
           "locationCode" : 4444
         },
         {
-          "id" : 5,
           "batteryLevel" : 75,
           "locationCode" : 5555
         },
         {
-          "id" : 6,
           "batteryLevel" : 75,
           "locationCode" : 6666
         },
         {
-          "id" : 7,
           "batteryLevel" : 75,
           "locationCode" : 7777
         }
@@ -56,12 +50,12 @@ class App extends Component {
             </div>
           </Row>
           <Row fluid>
-              {this.state.data.map((item) => {
+              {this.state.data.map((item, index) => {
                 return(
-                  <Col key={item.id}>
+                  <Col key={index}>
                     <p>
                       <Extinguisher
-                      id={item.id}
+                      id={uuid()}
                       batteryLevel={item.batteryLevel}
                       locationCode={item.locationCode}/>
                     </p>
