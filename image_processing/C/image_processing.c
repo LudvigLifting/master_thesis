@@ -8,7 +8,7 @@ struct Size {
 
 typedef struct Size Size;
 
-Size calcSize(char* fileName){
+Size get_image_size(char* fileName){
 
     Size size;
     char temp[4];
@@ -54,7 +54,7 @@ int main(void){
 
             char temp[arr_size + 100*sizeof(char)];
             memcpy(temp, arr, arr_size);
-            arr = &temp;
+            arr = temp;
             free(temp);
         }
         arr[i] = number; 
