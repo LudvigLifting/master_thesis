@@ -6,9 +6,10 @@ from matplotlib import pyplot as plt
 import os
 import time
 import pathlib
+import math
 
 
-def lol1(dir_path, files):
+def adaptive_threshold(dir_path, files):
 
     #for file in files:
     file = files[5]
@@ -44,7 +45,6 @@ def histo(dir_path, files):
         plt.show()
         
         plt.figure(file)
-        resultimage = np.zeros((800, 800))
 
         sobel_x = cv2.Sobel(gray, cv2.CV_8U, 1, 0, ksize=1, scale=1)
         sobel_y = cv2.Sobel(gray, cv2.CV_8U, 0, 1, ksize=1, scale=1)
@@ -89,37 +89,53 @@ def histo(dir_path, files):
     time.sleep(10)
     plt.close()
 
-def lol(dir_path: str, files: list):
+def simple_threshold(dir_path: str, files: list):
     for file in files:
-        image = cv2.imread(dir_path + "1" + file)
+        image = cv2.imread(dir_path + files[5])
 
         plt.figure(file)
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        #Changing size
+        (rows, cols) = gray.shape
+        
+        cut = round(rows*0.7)
+        gray = gray[0:cut]
+        gray = np.array([row[round((rows-cut)/2):cols-round((rows-cut)/2)] for row in gray])
+        
+        print(gray.shape)
 
 
         sobel_x = cv2.Sobel(gray, cv2.CV_8U, 1, 0, ksize=1)
         #sobel_y = cv2.Sobel(gray, cv2.CV_8U, 0, 1, ksize=1)
         
-        sub1 = plt.subplot(2, 2, 1)
+        sub1 = plt.subplot(2, 3, 1)
         plt.imshow(sobel_x, cmap="gray")
         
         #Normalize
         t10 = cv2.threshold(sobel_x, 10, 255, cv2.THRESH_BINARY)[1]
         t30 = cv2.threshold(sobel_x, 30, 255, cv2.THRESH_BINARY)[1]
         t50 = cv2.threshold(sobel_x, 50, 255, cv2.THRESH_BINARY)[1]
+        t60 = cv2.threshold(sobel_x, 60, 255, cv2.THRESH_BINARY)[1]
+        t70 = cv2.threshold(sobel_x, 70, 255, cv2.THRESH_BINARY)[1]
         
-        sub2 = plt.subplot(2, 2, 2)
+        sub2 = plt.subplot(2, 3, 2)
         plt.imshow(t10, cmap="gray")
-        sub3 = plt.subplot(2, 2, 3)
+        sub3 = plt.subplot(2, 3, 3)
         plt.imshow(t30, cmap="gray")
-        sub4 = plt.subplot(2, 2, 4)
+        sub4 = plt.subplot(2, 3, 4)
         plt.imshow(t50, cmap="gray")
+        sub5 = plt.subplot(2, 3, 5)
+        plt.imshow(t60, cmap="gray")
+        sub6 = plt.subplot(2, 3, 6)
+        plt.imshow(t70, cmap="gray")
     
         sub1.title.set_text(f'Sobel x original')
         sub2.title.set_text(f'Threshold value 10')
         sub3.title.set_text(f'Threshold value 30')
         sub4.title.set_text(f'Threshold value 50')
-
+        sub5.title.set_text(f'Threshold value 60')
+        sub6.title.set_text(f'Threshold value 70')
 
         #plt.tight_layout()
         plt.subplots_adjust(
@@ -133,6 +149,17 @@ def lol(dir_path: str, files: list):
     plt.show()
     time.sleep(60)
     plt.close()
+    
+def pixelcalc():
+    
+    A = (((25*10**(-3))/2)**2)*math.pi
+    pixel_widths = [50+i for i in range(1,450)]
+    pixel_sizes = [(A/(w**2))*700000 for w in pixel_widths]
+    plt.plot(pixel_widths, [size**2 for size in pixel_sizes])
+    plt.xlabel("nbr pixels")
+    plt.ylabel("size [mm^2]")
+    plt.title("Function of pixel size depending on resolution")
+    plt.show()
 
 def main():
     dir_path = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/ext"
@@ -145,15 +172,8 @@ def main():
         "/250x250.jpg",
         "/300x300.jpg"
     ]
-    files.reverse()
-
-    lol(dir_path, files)
-    #cv2.cvtColor(image_BGR, cv2.COLOR_BGR2GRAY)
-
-    #gray = cv2.imread(dir_path + "/test500x500.jpg", cv2.IMREAD_COLOR)
-    #sub1 = plt.subplot(4, 2, 1)
-    #plt.imshow(gray)
-    
+    #pixelcalc()
+    simple_threshold(dir_path + "1", files)
 
 if __name__ == '__main__':
     main()
