@@ -11,4 +11,4 @@ for resolution in resolutions:
     camera.resolution = resolution
     #camera.start_preview()
     sleep(0.2)
-    camera.capture(dir_path + "ext1/" + str(resolution[0]) + "x" + str(resolution[1]) + ".jpg")
+    camera.capture(dir_path + "ext2/" + str(resolution[0]) + "x" + str(resolution[1]) + ".jpg")
