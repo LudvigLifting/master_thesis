@@ -160,10 +160,33 @@ def pixelcalc():
     plt.ylabel("size [mm^2]")
     plt.title("Function of pixel size depending on resolution")
     plt.show()
+    
+def diff(image1: np.ndarray, image2: np.ndarray):
+    
+    return np.array([[abs(int(val1) - int(val2)) for val1, val2 in zip(row1, row2)] for row1, row2 in zip(image1, image2)], dtype=np.uint8) 
+
+def sobel_threshold(image: np.ndarray):
+    
+    ret_arr = []
+    
+    #Change size to isolate pekare
+    (rows, cols) = image.shape
+    cut = round(rows*0.7)
+    image = image[0:cut]
+    image = np.array([row[round((rows-cut)/2):cols-round((rows-cut)/2)] for row in image])
+    
+    #Sobel on image
+    image = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=1)
+    
+    #thresholding
+    for cutoff in range(0, 60, 10):
+        ret_arr.append(cv2.threshold(image, cutoff, 255, cv2.THRESH_BINARY)[1])
+    print(ret_arr)
+    return ret_arr
 
 def main():
-    dir_path = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/ext"
-    print(dir_path)
+    dir_path = str(pathlib.Path(__file__).parent.resolve())
+    folder = ["/../pictures/ext1", "/../pictures/ext2"]
     files = [
         "/50x50.jpg",
         "/100x100.jpg",
@@ -172,8 +195,42 @@ def main():
         "/250x250.jpg",
         "/300x300.jpg"
     ]
-    #pixelcalc()
-    simple_threshold(dir_path + "1", files)
+    
+    #Load images
+    images = [[] for _ in range(len(folder))]
+    for i in range(len(folder)):
+        for file in files:
+            image = cv2.imread(dir_path + folder[i] + file)
+            print(dir_path + file)
+            images[i].append(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
+    
+    #Thresholding on the images for all resolutions
+    thresholds = [[[] for _ in range(len(images[0]))] for _ in range(len(images))]
+    for i, image in enumerate(images):
+        for j, res in enumerate(image):
+            thresholds[i][j] = (sobel_threshold(res))
+        
+    #Generate and plot diff images
+    thresh_val = 6
+    res = 5
+    for i in range(0, len(thresholds), 2):
+        for j, (image1, image2) in enumerate(zip(thresholds[i][res], thresholds[i+1][res])):
+            plt.figure(f"diff of image {i} and  + {i+1} size = {image1.shape} and threshold {j*10}")
+            difference = diff(image1, image2)
+            #print(image1)
+            
+            sub = plt.subplot(3, 1, 1)
+            plt.imshow(image1, cmap="gray")
+            sub.title.set_text(f'Image 1')
+            sub = plt.subplot(3, 1, 2)
+            plt.imshow(image2, cmap="gray")
+            sub.title.set_text(f'Image 2')
+            sub = plt.subplot(3, 1, 3)
+            plt.imshow(difference, cmap="gray")
+            sub.title.set_text(f'Diff image (diff = 1 - 2)')
+    plt.show()
+        
+    
 
 if __name__ == '__main__':
     main()

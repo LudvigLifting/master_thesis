@@ -30,7 +30,7 @@ int main(void){
     FILE *fptr;
     char path[100] = "../pictures/";
     char fileName[] = "test_color100x100.jpg";
-    Size size = calcSize(fileName);
+    Size size = get_image_size(fileName);
 
     printf("Image: width = %d, height = %d\n", size.width, size.height);
 
@@ -44,7 +44,8 @@ int main(void){
     }
 
     char number;
-    char *arr[100];
+    char* arr;
+    
     int i = 0;
 
     while ( fscanf(fptr, "%c", & number ) == 1 ){ 
