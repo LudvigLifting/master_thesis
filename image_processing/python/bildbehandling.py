@@ -171,15 +171,15 @@ def sobel_threshold(image: np.ndarray):
     
     #Change size to isolate pekare
     (rows, cols) = image.shape
-    cut = round(rows*0.7)
-    image = image[0:cut]
-    image = np.array([row[round((rows-cut)/2):cols-round((rows-cut)/2)] for row in image])
+    cut = round(rows*0.55)
+    image = image[round(cut/4):cut]
+    image = np.array([row[round(cut/2):cols - round(cut/2)] for row in image])
     
     #Sobel on image
     image = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=1)
     
     #thresholding
-    for cutoff in range(0, 60, 10):
+    for cutoff in range(10, 40, 10):
         ret_arr.append(cv2.threshold(image, cutoff, 255, cv2.THRESH_BINARY)[1])
     print(ret_arr)
     return ret_arr
@@ -215,7 +215,7 @@ def main():
     res = 5
     for i in range(0, len(thresholds), 2):
         for j, (image1, image2) in enumerate(zip(thresholds[i][res], thresholds[i+1][res])):
-            plt.figure(f"diff of image {i} and  + {i+1} size = {image1.shape} and threshold {j*10}")
+            plt.figure(f"diff of image {i} and {i+1} size = {image1.shape} and threshold {j*10 + 10}")
             difference = diff(image1, image2)
             #print(image1)
             
