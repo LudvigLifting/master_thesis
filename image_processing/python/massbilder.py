@@ -6,7 +6,7 @@ camera.color_effects = (128, 128) #svartvit
 resolution = (200, 200)
 dir_path = "/home/exjobb/code/master_thesis/image_processing/pictures/many/" 
 
-nbr_images = 100
+nbr_images = 10
 for i in range(nbr_images):
     print(f"image {i}")
     camera.resolution = resolution

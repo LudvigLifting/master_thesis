@@ -7,6 +7,7 @@ import os
 import time
 import pathlib
 import math
+from picamera import PiCamera
 
 def histo(image: np.ndarray, name: str="") -> None:
 
@@ -181,7 +182,6 @@ def sobel_threshold(image: np.ndarray, type_ba: str="basic") -> np.ndarray:
     sobel = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
     
     th_scheme = "mean"
-    
     if type_ba == "global":
         ret_arr = []
         #basic globalthresholding
@@ -191,31 +191,65 @@ def sobel_threshold(image: np.ndarray, type_ba: str="basic") -> np.ndarray:
     else:
         #advanced adaptive thresholding (3x3)
         #padding
+        start = time.time()
         sobel = pad(sobel)
+        print(f"Time padding: {time.time() - start}s..")
         (rows, cols) = sobel.shape
         flattened = np.ravel(sobel)
         offset = 20
         pad_offset = 1
         
+        start = time.time()
         for row in range(pad_offset, rows-pad_offset):
             for col in range(pad_offset, cols-pad_offset):
                 index = row*cols+col
                 sobel[row][col] = adaptive(sub_3x3(flattened, index, (rows, cols)), flattened[index], offset, th_scheme)
-        return unpad(sobel)
+        print(f"Time sobel threshold: {time.time() - start}s..")
+        start = time.time()
+        sobel = unpad(sobel)
+        print(f"Time unpadding: {time.time() - start}s..")
+        return sobel
     
 def calc_noise_floor():
-    nbr_images = 10
+    camera = PiCamera()
+    camera.color_effects = (128, 128) #svartvit
+    resolution = (200, 200)
+    dir_path = "/home/exjobb/code/master_thesis/image_processing/pictures/many/" 
+
+    nbr_images = 2
+    # for i in range(nbr_images):
+    #     print(f"image {i}")
+    #     camera.resolution = resolution
+    #     time.sleep(0.2)
+    #     camera.capture(dir_path + str(i) + ".jpg")
+    #     print("done")
+    
+    start = time.time()
     files = [str(i) + ".jpg" for i in range(nbr_images)]
     folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/many/"
     images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
+    print(f"File load completed in {time.time() - start}s..")
+    means = [image.mean() for image in images]
+    means = [means[i]+means[i+1] for i in range(0, len(means), 2)]
+
+    start = time.time()
     edges = [sobel_threshold(image, "adaptive") for image in images]
+    print(f"Sobel thresholding completed in {time.time() - start}s..")
     
+    start = time.time()
+    diffs = []
+    nbrs = []
     for i in range(0, len(edges), 2):
-        difference = diff(edges[i], edges[i+1])
-        nbr = int(np.sum(difference)/255)
-        print(f"Number of white pixels: {nbr} = {nbr/(difference.shape[0]*difference.shape[1]):.3f}%")
+        diffs.append(diff(edges[i], edges[i+1]))
+        nbrs.append(int(np.sum(diffs[int(i/2)])/255))
+        print(f"Number of white pixels: {nbrs[int(i/2)]} = {nbrs[int(i/2)]/(diffs[int(i/2)].shape[0]*diffs[int(i/2)].shape[1]):.3f}%")
+    plt.bar(means, nbrs)
+    plt.xlabel("mean light value")
+    plt.ylabel("light noise")
+    print(f"Pixel calculations completed in {time.time() - start}s..")
+    plt.show()
     
-    
+
 def main():
     #pixelcalc()
     dir_path = str(pathlib.Path(__file__).parent.resolve())
