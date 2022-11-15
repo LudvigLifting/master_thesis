@@ -99,43 +99,14 @@ def diff(image1: np.ndarray, image2: np.ndarray) -> np.ndarray:
 def adaptive(arr: np.ndarray, value: np.uint8, C: int=0, type_th: str="mean") -> np.uint8:
 
     if type_th == "mean":
-        return np.uint8(255) if value > np.uint8(sum(arr)/len(arr)) + C else np.uint8(0)
+        return np.uint8(255) if value > np.uint8(arr.mean()) + C else np.uint8(0)
     elif type_th == "median":
-        return np.sort(arr, 1)[round((len(arr)-1)/2)]
+        return np.sort(arr, 1)[round(((arr.size)-1)/2)]
 
 def sub_3x3(flattened: np.ndarray, i: int, shape: tuple) -> np.ndarray:
 
-    (rows, cols) = shape
-    if i < cols:
-        #top row
-        if cols - i % cols == 1:
-            #right edge
-            subarray = np.concatenate((flattened[i-1:i], flattened[i+cols-1:i+cols]))
-        elif i % cols == 0:
-            #left edge
-            subarray = np.concatenate((flattened[i:i+1], flattened[i+cols:i+cols+1]))
-        else:
-            subarray = np.concatenate((flattened[i-1:i+1], flattened[i+cols-1:i+cols+1]))
-    elif i > rows*(cols -1):
-        #bottom row
-        if cols - i % cols == 1:
-            #right edge
-            subarray = np.concatenate((flattened[i-cols-1:i-cols], flattened[i-1:i]))
-        elif i % cols == 0:
-            #left edge
-            subarray = np.concatenate((flattened[i-cols:i-cols+1], flattened[i:i+1]))
-        else:
-            subarray = np.concatenate((flattened[i-cols-1:i-cols+1], flattened[i-1:i+1]))
-    else:
-        #Normal
-        if cols - i % cols == 1:
-            #right edge
-            subarray = np.concatenate((flattened[i-cols-1:i-cols], flattened[i-1:i], flattened[i+cols-1:i+cols]))
-        elif i % cols == 0:
-            #left edge
-            subarray = np.concatenate((flattened[i-cols:i-cols+1], flattened[i:i+1], flattened[i+cols:i+cols+1]))
-        else:
-            subarray = np.concatenate((flattened[i-cols-1:i-cols+1], flattened[i-1:i+1], flattened[i+cols-1:i+cols+1]))
+    cols = shape[1]
+    subarray = np.concatenate((flattened[i-cols-1:i-cols+1], flattened[i-1:i+1], flattened[i+cols-1:i+cols+1]))
     return subarray
 
 def filter_dots(image: np.ndarray, level: int) -> np.ndarray:
@@ -191,13 +162,18 @@ def crop(image: np.ndarray, percentage: int, ratio: int=1) -> np.ndarray:
 def pad(image: np.ndarray) -> np.ndarray:
 
     cols = image.shape[1]
-    padded = []
-    padded.append(np.zeros((1, cols + 2), np.uint8))
+    padded = np.zeros((1, cols + 2), np.uint8)
     for row in image:
-        padded.append(np.concatenate((np.zeros(1, np.uint8), row, np.zeros(1, np.uint8))))
-    padded.append(np.zeros((1, cols + 2), np.uint8))
+        padded = np.vstack((padded, np.concatenate((np.zeros(1, np.uint8), row, np.zeros(1, np.uint8)))))
+    padded = np.vstack((padded, np.zeros((1, cols + 2), np.uint8)))
     
-    return np.array(padded)
+    return padded
+
+def unpad(image: np.ndarray) -> np.ndarray:
+    
+    (rows, cols) = image.shape
+    
+    return image[1:rows-1, 1:cols-1]
     
 def sobel_threshold(image: np.ndarray, type_ba: str="basic") -> np.ndarray:
     
@@ -214,21 +190,36 @@ def sobel_threshold(image: np.ndarray, type_ba: str="basic") -> np.ndarray:
         return ret_arr
     else:
         #advanced adaptive thresholding (3x3)
+        #padding
+        sobel = pad(sobel)
         (rows, cols) = sobel.shape
         flattened = np.ravel(sobel)
         offset = 20
-        for i in range(len(flattened)):
-            if i < cols:
-                #First row
-                sobel[0][i] = adaptive(sub_3x3(flattened, i, (rows, cols)), flattened[i], offset, th_scheme)
-            else:
-                #All other rows
-                sobel[round((i-i%rows)/rows)][i%(rows)] = adaptive(sub_3x3(flattened, i, (rows, cols)), flattened[i], offset, th_scheme)
-        return sobel                  
-
+        pad_offset = 1
+        
+        for row in range(pad_offset, rows-pad_offset):
+            for col in range(pad_offset, cols-pad_offset):
+                index = row*cols+col
+                sobel[row][col] = adaptive(sub_3x3(flattened, index, (rows, cols)), flattened[index], offset, th_scheme)
+        return unpad(sobel)
+    
+def calc_noise_floor():
+    nbr_images = 10
+    files = [str(i) + ".jpg" for i in range(nbr_images)]
+    folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/many/"
+    images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
+    edges = [sobel_threshold(image, "adaptive") for image in images]
+    
+    for i in range(0, len(edges), 2):
+        difference = diff(edges[i], edges[i+1])
+        nbr = int(np.sum(difference)/255)
+        print(f"Number of white pixels: {nbr} = {nbr/(difference.shape[0]*difference.shape[1]):.3f}%")
+    
+    
 def main():
+    #pixelcalc()
     dir_path = str(pathlib.Path(__file__).parent.resolve())
-    folder = ["/../pictures/ext" + str(n) for n in range(4)]
+    folder = ["/../pictures/many" + str(n) for n in range(4)]
     files = [
         "/50x50.jpg",
         "/100x100.jpg",
@@ -237,6 +228,7 @@ def main():
         "/250x250.jpg",
         "/300x300.jpg"
     ]
+    
     res = {
         "50x50"     : 0,
         "100x100"   : 1,
@@ -245,6 +237,10 @@ def main():
         "250x250"   : 4,
         "300x300"   : 5
     }
+    res = {"200x200"   : 3}
+    
+    calc_noise_floor()
+    exit()
     
     #Load images
     images = [[] for _ in range(len(folder))]
@@ -253,7 +249,6 @@ def main():
             image = cv2.imread(dir_path + folder[i] + file)
             #print(dir_path + folder[i] + file)
             images[i].append(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
-    pad(images[0][res["50x50"]])
     
     im = scale_light(images[0][res["300x300"]], images[1][res["300x300"]])
     plt.figure("test_light")
