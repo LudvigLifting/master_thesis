@@ -7,7 +7,7 @@ import os
 import time
 import pathlib
 import math
-from picamera import PiCamera
+#from picamera import PiCamera
 
 def histo(image: np.ndarray, name: str="") -> None:
 
@@ -193,7 +193,7 @@ def sobel_threshold(image: np.ndarray, type_ba: str="basic") -> np.ndarray:
         #padding
         start = time.time()
         sobel = pad(sobel)
-        print(f"Time padding: {time.time() - start}s..")
+        #print(f"Time padding: {time.time() - start}s..")
         (rows, cols) = sobel.shape
         flattened = np.ravel(sobel)
         offset = 20
@@ -203,20 +203,26 @@ def sobel_threshold(image: np.ndarray, type_ba: str="basic") -> np.ndarray:
         for row in range(pad_offset, rows-pad_offset):
             for col in range(pad_offset, cols-pad_offset):
                 index = row*cols+col
-                sobel[row][col] = adaptive(sub_3x3(flattened, index, (rows, cols)), flattened[index], offset, th_scheme)
-        print(f"Time sobel threshold: {time.time() - start}s..")
-        start = time.time()
+                #start = time.time()
+                sub = sub_3x3(flattened, index, (rows, cols))
+                # print(f"Time sub 3x3: {time.time() - start}s..")
+                #start = time.time()
+                sobel[row][col] = adaptive(sub, flattened[index], offset, th_scheme)
+                # print(f"Time adaptive: {time.time() - start}s..")
+        # print(f"Time sobel threshold: {time.time() - start}s..")
+        #start = time.time()
         sobel = unpad(sobel)
-        print(f"Time unpadding: {time.time() - start}s..")
+        #print(f"Time unpadding: {time.time() - start}s..")
         return sobel
     
 def calc_noise_floor():
-    camera = PiCamera()
-    camera.color_effects = (128, 128) #svartvit
-    resolution = (200, 200)
+    #camera = PiCamera()
+    #camera.color_effects = (128, 128) #svartvit
+    #resolution = (200, 200)
     dir_path = "/home/exjobb/code/master_thesis/image_processing/pictures/many/" 
+    np.stack
 
-    nbr_images = 2
+    nbr_images = 99
     # for i in range(nbr_images):
     #     print(f"image {i}")
     #     camera.resolution = resolution
@@ -225,27 +231,36 @@ def calc_noise_floor():
     #     print("done")
     
     start = time.time()
-    files = [str(i) + ".jpg" for i in range(nbr_images)]
+    files = [str(i) + ".jpg" for i in range(nbr_images+1)]
     folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/many/"
     images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
     print(f"File load completed in {time.time() - start}s..")
-    means = [image.mean() for image in images]
-    means = [means[i]+means[i+1] for i in range(0, len(means), 2)]
+    means = [image.mean() for image in images[1:len(images)]]
+    means = sorted([(means[i]+means[i+1])/2 for i in range(len(means)-1)])
+    
 
     start = time.time()
-    edges = [sobel_threshold(image, "adaptive") for image in images]
+    edges = [sobel_threshold(image, "adaptive") for image in images[:len(images)-1]]
     print(f"Sobel thresholding completed in {time.time() - start}s..")
+    
+    benchmark_image = edges[0]
     
     start = time.time()
     diffs = []
     nbrs = []
-    for i in range(0, len(edges), 2):
-        diffs.append(diff(edges[i], edges[i+1]))
-        nbrs.append(int(np.sum(diffs[int(i/2)])/255))
+    for i in range(1, len(edges)):
+        diffs.append(diff(benchmark_image, edges[i]))
+        nbrs.append(int(np.sum(diffs[int(i/2)])/(200*200))+100)
         print(f"Number of white pixels: {nbrs[int(i/2)]} = {nbrs[int(i/2)]/(diffs[int(i/2)].shape[0]*diffs[int(i/2)].shape[1]):.3f}%")
-    plt.bar(means, nbrs)
-    plt.xlabel("mean light value")
-    plt.ylabel("light noise")
+    print(f"means:{len(means)}, nbrs:{len(nbrs)}")
+    plt.figure("Noise depending on light intensity")
+    plt.grid()
+    #sub = plt.subplot(2, 1, 1)
+    #sub.title.set_text(f"Relative light intensity")
+    plt.plot(means, label = "intensity", linestyle="-")
+    #sub = plt.subplot(2, 1, 2)
+    #sub.title.set_text(f"Relative noise")
+    plt.plot(nbrs, label = "noise", linestyle="--")
     print(f"Pixel calculations completed in {time.time() - start}s..")
     plt.show()
     
