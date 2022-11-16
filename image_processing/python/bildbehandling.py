@@ -144,7 +144,7 @@ def scale_light(image1: np.ndarray, image2: np.ndarray) -> np.ndarray:
     im1 = np.reshape(np.array([np.uint8(pixel*(mean2/mean1) if pixel*(mean2/mean1) < 255 else 255) for pixel in np.ravel(im1)]), image1.shape)
     im2 = np.reshape(np.array([np.uint8(pixel*(mean1/mean2) if pixel*(mean1/mean2) < 255 else 255) for pixel in np.ravel(im2)]), image2.shape)
     
-    return np.array([im1, im2])
+    return im2
 
 def crop(image: np.ndarray, percentage: int, ratio: int=1) -> np.ndarray:
     
@@ -179,7 +179,8 @@ def unpad(image: np.ndarray) -> np.ndarray:
 def sobel_threshold(image: np.ndarray, type_ba: str="basic") -> np.ndarray:
     
     #Sobel on image
-    sobel = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
+    #sobel = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
+    sobel = image.copy()
     
     th_scheme = "mean"
     if type_ba == "global":
@@ -222,7 +223,7 @@ def calc_noise_floor():
     dir_path = "/home/exjobb/code/master_thesis/image_processing/pictures/many/" 
     np.stack
 
-    nbr_images = 99
+    nbr_images = 10
     # for i in range(nbr_images):
     #     print(f"image {i}")
     #     camera.resolution = resolution
@@ -250,7 +251,7 @@ def calc_noise_floor():
     nbrs = []
     for i in range(1, len(edges)):
         diffs.append(diff(benchmark_image, edges[i]))
-        nbrs.append(int(np.sum(diffs[int(i/2)])/(200*200))+100)
+        nbrs.append(int(np.sum(diffs[int(i/2)])/(200*200))+60)
         print(f"Number of white pixels: {nbrs[int(i/2)]} = {nbrs[int(i/2)]/(diffs[int(i/2)].shape[0]*diffs[int(i/2)].shape[1]):.3f}%")
     print(f"means:{len(means)}, nbrs:{len(nbrs)}")
     plt.figure("Noise depending on light intensity")
@@ -262,10 +263,47 @@ def calc_noise_floor():
     #sub.title.set_text(f"Relative noise")
     plt.plot(nbrs, label = "noise", linestyle="--")
     print(f"Pixel calculations completed in {time.time() - start}s..")
+    plt.legend()
     plt.show()
+
+def example():
+
+    files = [str(0) + ".jpg", str(70) + ".jpg"]
+    folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/many/"
+    images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
+
+    reference = cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
+    image = cv2.GaussianBlur(images[1],(3,3),cv2.BORDER_DEFAULT)
+
+    plt.figure("Reference image")
+    plt.subplot(2, 1, 1)
+    plt.imshow(reference, cmap="gray")
+    plt.subplot(2, 1, 2)
+    plt.imshow(image, cmap="gray")
+
+    reference = cv2.Sobel(reference, cv2.CV_8U, 1, 0, ksize=3)
+    image = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
     
+    plt.figure("Sobel")
+    plt.imshow(image, cmap="gray")
+
+    reference = sobel_threshold(reference, "adaptive")
+    image = sobel_threshold(image, "adaptive")
+
+    plt.figure("Thresholding")
+    plt.imshow(image, cmap="gray")
+
+    dif = diff(reference, image)
+    dif = filter_dots(dif, 2)
+
+    plt.figure("Diff image")
+    plt.imshow(dif, cmap="gray")
+
+    plt.show()
 
 def main():
+    example()
+    exit()
     #pixelcalc()
     dir_path = str(pathlib.Path(__file__).parent.resolve())
     folder = ["/../pictures/many" + str(n) for n in range(4)]
