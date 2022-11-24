@@ -9,9 +9,12 @@ import pathlib
 import math
 #from picamera import PiCamera
 
+def dump_csv(image: np.ndarray) -> None:
+
+    image.tofile(str(pathlib.Path(__file__).parent.resolve()) + "/huffman_coding/numbers.csv", sep=' ', format='%d')
+
 def histo(image: np.ndarray, name: str="") -> None:
 
-    plt.figure(f"Histogram of {name}")
     flattened = np.ravel(image)
     plt.hist(flattened, len(flattened))
     if name == "":
@@ -268,9 +271,12 @@ def calc_noise_floor():
 
 def example():
 
-    files = [str(0) + ".jpg", str(70) + ".jpg"]
-    folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/many/"
+    # files = [str(0) + ".jpg", str(70) + ".jpg"]
+    # folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/many/"
+    files = ["ext0/200x200.jpg", "ext4/200x200.jpg"]
+    folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/"
     images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
+    
 
     reference = cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
     image = cv2.GaussianBlur(images[1],(3,3),cv2.BORDER_DEFAULT)
@@ -283,6 +289,7 @@ def example():
 
     reference = cv2.Sobel(reference, cv2.CV_8U, 1, 0, ksize=3)
     image = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
+    dump_csv(reference)
     
     plt.figure("Sobel")
     plt.imshow(image, cmap="gray")
