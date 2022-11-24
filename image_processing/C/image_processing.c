@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <unistd.h>
 
 struct Size {
     int height, width;
@@ -8,59 +10,62 @@ struct Size {
 
 typedef struct Size Size;
 
-Size get_image_size(char* fileName){
+int** create_arr(int N, int M){
 
-    Size size;
-    char temp[4];
-    
-    strncpy(temp, fileName + 10, 3);
-    temp[3] = '\0';
-    size.width = atoi(temp);
+    int **arr = calloc(N, sizeof(int));
+    for(int i = 0; i < N; i++){
+        arr[i] = calloc(M, sizeof(int));
+    }
 
-    strncpy(temp, fileName + 14, 3);
-    temp[3] = '\0';
-    size.height = atoi(temp);
-
-    return size;
+    return arr;
 }
 
 int main(void){
 
-    printf("\n");
+    Size image_size = { .height = 200, .width = 200 };
+
+    int** image = create_arr(image_size.height, image_size.width);
+
+    char cwd[PATH_MAX];
+    getcwd(cwd, sizeof(cwd));
+    char fileName[] = "/../python/huffman_coding/numbers.csv";
+
     FILE *fptr;
-    char path[100] = "../pictures/";
-    char fileName[] = "test_color100x100.jpg";
-    Size size = get_image_size(fileName);
 
-    printf("Image: width = %d, height = %d\n", size.width, size.height);
-
-    printf("concat = %s\n", strcat(path, fileName));
-
-    fptr = fopen(fileName, "r");
+    //Get file handle
+    fptr = fopen(strcat(cwd, fileName), "r");
 
     if (fptr == NULL){
         printf("File open error..\n");
         exit(-1);
     }
 
-    char number;
-    char* arr;
-    
-    int i = 0;
+    int i, j = 0;
+    int number;
 
-    while ( fscanf(fptr, "%c", & number ) == 1 ){ 
-        
-        int arr_size = sizeof(arr)/sizeof(char);
-        if(i >= arr_size){
+    //Load image
+    while ( fscanf(fptr, "%d", &number) == 1 ){
 
-            char temp[arr_size + 100*sizeof(char)];
-            memcpy(temp, arr, arr_size);
-            arr = temp;
-            free(temp);
+        if(i > 199){
+            break;
         }
-        arr[i] = number; 
-        i++;
-    } 
+
+        image[i][j] = number;
+
+        if(j != 0 && j % (image_size.width-1) == 0){
+            i++;
+            j = 0;
+        }
+        j++;
+    }
+    fclose(fptr);
+
+    for(i = 0; i < image_size.height; i++){
+        for(j = 0; j < image_size.width; j++){
+            printf("%d ", image[i][j]);
+        }
+    }
+
 
     return 0;
 }

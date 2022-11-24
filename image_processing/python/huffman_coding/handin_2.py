@@ -167,7 +167,7 @@ if __name__ == '__main__':
     assign_codes(root, mapping)
 
     #Sort code mapping and counts for easy comparison (sorted by symbol)
-    sorted_map = sorted(mapping.items(), key=lambda item: item[0])
+    sorted_map = sorted(mapping.items(), key=lambda item: int(item[0]))
     sorted_counts = sorted(counts.items(), key=lambda item: item[0])
 
     #Encode the text with the generated codes
