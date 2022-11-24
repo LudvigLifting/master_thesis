@@ -11,7 +11,7 @@ import math
 
 def dump_csv(image: np.ndarray) -> None:
 
-    image.tofile(str(pathlib.Path(__file__).parent.resolve()) + "/huffman_coding/numbers.csv", sep=' ', format='%d')
+    image.tofile(str(pathlib.Path(__file__).parent.resolve()) + "/../C/numbers.csv", sep=' ', format='%d')
 
 def histo(image: np.ndarray, name: str="") -> None:
 
@@ -277,7 +277,7 @@ def example():
     folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/"
     images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
     
-
+    dump_csv(images[0])
     reference = cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
     image = cv2.GaussianBlur(images[1],(3,3),cv2.BORDER_DEFAULT)
 
@@ -289,7 +289,6 @@ def example():
 
     reference = cv2.Sobel(reference, cv2.CV_8U, 1, 0, ksize=3)
     image = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
-    dump_csv(reference)
     
     plt.figure("Sobel")
     plt.imshow(image, cmap="gray")

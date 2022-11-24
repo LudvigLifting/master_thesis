@@ -4,15 +4,17 @@
 #include <limits.h>
 #include <unistd.h>
 
+#define PATH_MAX    4096
+
 struct Size {
-    int height, width;
+    int rows, cols;
 };
 
 typedef struct Size Size;
 
 int** create_arr(int N, int M){
 
-    int **arr = calloc(N, sizeof(int));
+    int** arr = calloc(N, sizeof(int*));
     for(int i = 0; i < N; i++){
         arr[i] = calloc(M, sizeof(int));
     }
@@ -20,22 +22,62 @@ int** create_arr(int N, int M){
     return arr;
 }
 
-int main(void){
+void export_csv(int** arr, Size arrsize, char fileName[]){
+    
+    FILE *csv = fopen(fileName, "w");
+    if( csv == NULL ){
+        printf("File open error..\n");
+        exit( -1 );
+    }
+    for(int i = 0; i < arrsize.rows; i++){
+        for(int j = 0; j < arrsize.cols; j++){
 
-    Size image_size = { .height = 200, .width = 200 };
+            fprintf(csv, "%d", arr[i][j]);
+            if( j < arrsize.cols - 1 ){
+                fprintf(csv, " ");
+            }else{
+                fprintf(csv, "\n");
+            }
+        }
+    }
+}
 
-    int** image = create_arr(image_size.height, image_size.width);
+void print_arr(int** arr, Size arrsize){
+
+    printf("[");
+    for(int i = 0; i < arrsize.rows; i++){
+        printf("[");
+        for(int j = 0; j < arrsize.cols; j++){
+            
+            if( j < arrsize.cols - 1 ){
+                printf("%d, ", arr[i][j]);
+            }
+            else{
+                printf("%d]", arr[i][j]);
+            }
+        }
+        if( i < arrsize.rows - 1 ){
+            printf("\n");
+        }
+    }
+    printf("]\n");
+}
+
+int main(int argc, char **argv){
+
+    Size imsize = { .rows = 200, .cols = 200 };
+
+    int** image = create_arr(imsize.rows, imsize.cols);
 
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
+    //Fett oklart försöker läsa numbers.csv från C-directoryt men får bara nollor, det enda som funkar är denna pathen till en annan mapp
     char fileName[] = "/../python/huffman_coding/numbers.csv";
 
-    FILE *fptr;
-
     //Get file handle
-    fptr = fopen(strcat(cwd, fileName), "r");
+    FILE *fptr = fopen(strcat(cwd, fileName), "r");
 
-    if (fptr == NULL){
+    if ( fptr == NULL ){
         printf("File open error..\n");
         exit(-1);
     }
@@ -46,26 +88,26 @@ int main(void){
     //Load image
     while ( fscanf(fptr, "%d", &number) == 1 ){
 
-        if(i > 199){
+        if( i > imsize.rows-1 ){
             break;
         }
-
         image[i][j] = number;
 
-        if(j != 0 && j % (image_size.width-1) == 0){
+        if( j != 0 && j % ( imsize.cols - 1 ) == 0 ){
+            //New row
             i++;
             j = 0;
+        }else{
+            j++;
         }
-        j++;
     }
+
     fclose(fptr);
 
-    for(i = 0; i < image_size.height; i++){
-        for(j = 0; j < image_size.width; j++){
-            printf("%d ", image[i][j]);
-        }
-    }
+    print_arr(image, imsize);
 
+    export_csv(image, imsize, "output.csv");
 
+    free(image);
     return 0;
 }
