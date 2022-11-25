@@ -63,19 +63,15 @@ void print_arr(int** arr, Size arrsize){
     printf("]\n");
 }
 
-int main(int argc, char **argv){
-
-    Size imsize = { .rows = 200, .cols = 200 };
-
-    int** image = create_arr(imsize.rows, imsize.cols);
+void load_file(int** image_matrix, Size imsize, char fileName[]){
 
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
-    //Fett oklart försöker läsa numbers.csv från C-directoryt men får bara nollor, det enda som funkar är denna pathen till en annan mapp
-    char fileName[] = "/../python/huffman_coding/numbers.csv";
 
-    //Get file handle
-    FILE *fptr = fopen(strcat(cwd, fileName), "r");
+    printf("Loading file \"%s\"...\n", strcat(cwd, fileName));
+    printf("cwd = %s\n", cwd);
+    
+    FILE *fptr = fopen(cwd, "r");
 
     if ( fptr == NULL ){
         printf("File open error..\n");
@@ -85,13 +81,16 @@ int main(int argc, char **argv){
     int i, j = 0;
     int number;
 
-    //Load image
+    //Load all integers from the csv
     while ( fscanf(fptr, "%d", &number) == 1 ){
 
+        printf("Number i=%d, j=%d: %d\n", i, j, number);
+
+        //Matrix full
         if( i > imsize.rows-1 ){
             break;
         }
-        image[i][j] = number;
+        image_matrix[i][j] = number;
 
         if( j != 0 && j % ( imsize.cols - 1 ) == 0 ){
             //New row
@@ -103,8 +102,54 @@ int main(int argc, char **argv){
     }
 
     fclose(fptr);
+}
 
-    print_arr(image, imsize);
+void zero_padding(int** image, Size imsize){
+
+}
+
+int main(int argc, char **argv){
+
+    Size imsize = { .rows = 200, .cols = 200 };
+
+    int** image = create_arr(imsize.rows, imsize.cols);
+
+    
+    //Fett oklart försöker läsa numbers.csv från C-directoryt men får bara nollor, det enda som funkar är denna pathen till en annan mapp
+    load_file(image, imsize, "/numbers.csv");
+    //print_arr(image, imsize);
+
+    // //Get file handle
+    // FILE *fptr = fopen(strcat(cwd, fileName), "r");
+
+    // if ( fptr == NULL ){
+    //     printf("File open error..\n");
+    //     exit(-1);
+    // }
+
+    // int i, j = 0;
+    // int number;
+
+    // //Load image
+    // while ( fscanf(fptr, "%d", &number) == 1 ){
+
+    //     if( i > imsize.rows-1 ){
+    //         break;
+    //     }
+    //     image[i][j] = number;
+
+    //     if( j != 0 && j % ( imsize.cols - 1 ) == 0 ){
+    //         //New row
+    //         i++;
+    //         j = 0;
+    //     }else{
+    //         j++;
+    //     }
+    // }
+
+    // fclose(fptr);
+
+    //print_arr(image, imsize);
 
     export_csv(image, imsize, "output.csv");
 
