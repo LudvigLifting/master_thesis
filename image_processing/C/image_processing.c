@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-#include <unistd.h>
+#include <unistd.h> //For getcwd
 
 #define PATH_MAX    4096
 
@@ -12,11 +11,13 @@ struct Size {
 
 typedef struct Size Size;
 
-int** create_arr(int N, int M){
+int** create_arr(Size size){
 
-    int** arr = calloc(N, sizeof(int*));
-    for(int i = 0; i < N; i++){
-        arr[i] = calloc(M, sizeof(int));
+    printf("Creating array with size: %dx%d\n", size.rows, size.cols);
+
+    int** arr = calloc(size.rows, sizeof(int*));
+    for(int i = 0; i < size.rows; i++){
+        arr[i] = calloc(size.cols, sizeof(int));
     }
 
     return arr;
@@ -50,7 +51,7 @@ void print_arr(int** arr, Size arrsize){
         for(int j = 0; j < arrsize.cols; j++){
             
             if( j < arrsize.cols - 1 ){
-                printf("%d, ", arr[i][j]);
+                printf("%d ", arr[i][j]);
             }
             else{
                 printf("%d]", arr[i][j]);
@@ -63,7 +64,7 @@ void print_arr(int** arr, Size arrsize){
     printf("]\n");
 }
 
-void load_file(int** image_matrix, Size imsize, char fileName[]){
+int** load_file(Size imsize, char fileName[]){
 
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
@@ -78,18 +79,20 @@ void load_file(int** image_matrix, Size imsize, char fileName[]){
         exit(-1);
     }
 
-    int i, j = 0;
+    int** image_matrix = create_arr(imsize);
+
+    int i = 0;
+    int j = 0;
     int number;
 
     //Load all integers from the csv
-    while ( fscanf(fptr, "%d", &number) == 1 ){
-
-        printf("Number i=%d, j=%d: %d\n", i, j, number);
+    while ( fscanf(fptr, "%d", &number) != EOF ){
 
         //Matrix full
         if( i > imsize.rows-1 ){
             break;
         }
+
         image_matrix[i][j] = number;
 
         if( j != 0 && j % ( imsize.cols - 1 ) == 0 ){
@@ -102,54 +105,52 @@ void load_file(int** image_matrix, Size imsize, char fileName[]){
     }
 
     fclose(fptr);
+
+    return image_matrix;
 }
 
-void zero_padding(int** image, Size imsize){
+int** pad(int** image, Size *imsize){
 
+    //Update imsize and allocate new expanded array
+    imsize->rows += 2;
+    imsize->cols += 2;
+    int** expanded = create_arr(*imsize);
+    int* ad;
+
+    for(int i = 0; i < imsize->rows - 2; i++){
+        ad = &expanded[i+1][1];
+        memcpy(ad, image[i], (size_t)(imsize->cols*sizeof(int) - 2));
+    }
+
+    free(image);
+    return expanded;
+}
+
+int** unpad(int** image, Size *imsize){
+
+    imsize->rows -= 2;
+    imsize->cols -= 2;
+    int** reduced = create_arr(*imsize);
+    int* ad;
+
+    for(int i = 0; i < imsize->rows; i++){
+        ad = &image[i + 1][1];
+        memcpy(reduced[i], ad, imsize->cols*sizeof(int));
+    }
+
+    free(image);
+    return reduced;
 }
 
 int main(int argc, char **argv){
 
     Size imsize = { .rows = 200, .cols = 200 };
+    int** image;
 
-    int** image = create_arr(imsize.rows, imsize.cols);
-
-    
-    //Fett oklart försöker läsa numbers.csv från C-directoryt men får bara nollor, det enda som funkar är denna pathen till en annan mapp
-    load_file(image, imsize, "/numbers.csv");
-    //print_arr(image, imsize);
-
-    // //Get file handle
-    // FILE *fptr = fopen(strcat(cwd, fileName), "r");
-
-    // if ( fptr == NULL ){
-    //     printf("File open error..\n");
-    //     exit(-1);
-    // }
-
-    // int i, j = 0;
-    // int number;
-
-    // //Load image
-    // while ( fscanf(fptr, "%d", &number) == 1 ){
-
-    //     if( i > imsize.rows-1 ){
-    //         break;
-    //     }
-    //     image[i][j] = number;
-
-    //     if( j != 0 && j % ( imsize.cols - 1 ) == 0 ){
-    //         //New row
-    //         i++;
-    //         j = 0;
-    //     }else{
-    //         j++;
-    //     }
-    // }
-
-    // fclose(fptr);
-
-    //print_arr(image, imsize);
+    image = load_file(imsize, "/numbers.csv"); //Oklart om denna bör initiera image arrayen eller om man ska göra det utanför, funkar iaf.
+    image = pad(image, &imsize);
+    image = unpad(image, &imsize);
+    print_arr(image, imsize);
 
     export_csv(image, imsize, "output.csv");
 
