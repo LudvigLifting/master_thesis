@@ -142,17 +142,33 @@ int** unpad(int** image, Size *imsize){
     return reduced;
 }
 
+int** subarray(Size ker_size, int** image, int row, int col){
+
+    int** sub = create_arr(ker_size);
+    
+    for(int i = 0; i < ker_size.rows; i++){
+        memcpy(sub[i], &image[row + i - 1][col - 1], ker_size.cols*sizeof(int));
+    }
+
+    return sub;
+}
+
 int main(int argc, char **argv){
 
     Size imsize = { .rows = 200, .cols = 200 };
+    Size kernelsize = { .rows = 3, .cols = 3 };
     int** image;
 
-    image = load_file(imsize, "/numbers.csv"); //Oklart om denna bör initiera image arrayen eller om man ska göra det utanför, funkar iaf.
+    image = load_file(imsize, "/numbers.csv");
     image = pad(image, &imsize);
     image = unpad(image, &imsize);
-    print_arr(image, imsize);
 
     export_csv(image, imsize, "output.csv");
+    image = pad(image, &imsize);
+    print_arr(image, imsize);
+    int** sub = subarray(kernelsize, image, 200, 200);
+    print_arr(sub, kernelsize);
+    //print_arr(sub, kernelsize);
 
     free(image);
     return 0;
