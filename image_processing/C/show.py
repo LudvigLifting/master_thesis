@@ -10,7 +10,6 @@ def main():
         buffer = list(read)
         for row in read:
            buffer.append(row)
-        #4: because of file overhead
     image = np.array(buffer, dtype=np.uint8)
     plt.imshow(image, cmap="gray")
     plt.show()

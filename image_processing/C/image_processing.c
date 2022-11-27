@@ -13,6 +13,8 @@ typedef struct Size Size;
 
 int** create_arr(Size size){
 
+    //Ändra till malloc när allt funkar
+
     printf("Creating array with size: %dx%d\n", size.rows, size.cols);
 
     int** arr = calloc(size.rows, sizeof(int*));
@@ -58,7 +60,7 @@ void print_arr(int** arr, Size arrsize){
             }
         }
         if( i < arrsize.rows - 1 ){
-            printf("\n");
+            printf("\n ");
         }
     }
     printf("]\n");
@@ -115,11 +117,9 @@ int** pad(int** image, Size *imsize){
     imsize->rows += 2;
     imsize->cols += 2;
     int** expanded = create_arr(*imsize);
-    int* ad;
 
     for(int i = 0; i < imsize->rows - 2; i++){
-        ad = &expanded[i+1][1];
-        memcpy(ad, image[i], (size_t)(imsize->cols*sizeof(int) - 2));
+        memcpy(&expanded[i+1][1], image[i], (size_t)(imsize->cols*sizeof(int) - 2));
     }
 
     free(image);
@@ -131,11 +131,9 @@ int** unpad(int** image, Size *imsize){
     imsize->rows -= 2;
     imsize->cols -= 2;
     int** reduced = create_arr(*imsize);
-    int* ad;
 
     for(int i = 0; i < imsize->rows; i++){
-        ad = &image[i + 1][1];
-        memcpy(reduced[i], ad, imsize->cols*sizeof(int));
+        memcpy(reduced[i], &image[i + 1][1], imsize->cols*sizeof(int));
     }
 
     free(image);
@@ -151,6 +149,55 @@ int** subarray(Size ker_size, int** image, int row, int col){
     }
 
     return sub;
+}
+
+int** sobel(int** image, Size imsize){
+
+    int** sobeld = create_arr(imsize);
+
+    return sobeld;
+}
+
+int** threshold(int** image, Size imsize, Size kernelsize, int offset){
+
+    int** thresholded = create_arr(imsize);
+    int** sub;
+    int mean;
+
+    for(int i = 0; i < imsize.rows; i++){
+        for(int j = 0; j < imsize.cols; i++){
+
+            sub = subarray(kernelsize, image, i, j);
+
+            //Calculate mean
+            for(int p = 0; p < kernelsize.rows; p++){
+                for(int q = 0; q < kernelsize.rows; q++){
+                    mean += sub[p][q];
+
+                    if(p == kernelsize.rows - 1 && q == kernelsize.cols - 1){
+                        mean = (int) mean/(p*q); //Lite oklart hur vi ska göra med avrundning, om man castar så avrundas det alltid neråt, finns en round funktion i math.h
+                    }
+                }
+            }
+
+            thresholded[i][j] = (image[i][j] > mean) ? 255 : 0;
+            mean = 0;
+        }
+    }
+
+    return thresholded;
+}
+
+int** diff(int** ref, int** test, Size imsize){
+
+    int** difference = create_arr(imsize);
+    for(int i = 0; i < imsize.rows; i++){
+        for(int j = 0; j < imsize.cols; i++){
+            difference[i][j] = abs(ref[i][j] - test[i][j]);
+        }
+    }
+
+    return difference;
 }
 
 int main(int argc, char **argv){
