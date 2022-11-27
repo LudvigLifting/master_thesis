@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h> //For getcwd
+#include <time.h>
 
 #define PATH_MAX    4096
 
@@ -10,6 +11,15 @@ struct Size {
 };
 
 typedef struct Size Size;
+
+//Lite oklart om denna funkar
+void delete_arr(int** arr, Size size){
+
+    for(int i = 0; i < size.rows; i++){
+        free(arr[i]);
+    }
+    free(arr);
+}
 
 int** create_arr(Size size){
 
@@ -91,8 +101,8 @@ int** load_file(Size imsize, char fileName[]){
     //Load all integers from the csv
     while ( fscanf(fptr, "%d", &number) != EOF ){
 
-        //Matrix full
         if( i > imsize.rows-1 ){
+            //Matrix full
             break;
         }
 
@@ -124,7 +134,7 @@ int** pad(int** image, Size *imsize){
     }
 
     //Oklart om vi ska göra en free här
-    free(image);
+    //delete_arr(image);
     return expanded;
 }
 
@@ -139,7 +149,7 @@ int** unpad(int** image, Size *imsize){
     }
 
     //Oklart om vi ska göra en free här
-    free(image);
+    //delete_arr(image);
     return reduced;
 }
 
@@ -159,7 +169,7 @@ int** sobel(int** image, Size imsize){
     int** sobeld = create_arr(imsize);
 
     //Oklart om vi ska göra en free här
-    free(image);
+    //delete_arr(image);
     return sobeld;
 }
 
@@ -169,8 +179,8 @@ int** threshold(int** image, Size imsize, Size kernelsize, int offset){
     int** sub;
     int mean;
 
-    for(int i = 0; i < imsize.rows; i++){
-        for(int j = 0; j < imsize.cols; i++){
+    for(int i = 1; i < imsize.rows - 1; i++){
+        for(int j = 1; j < imsize.cols - 1; j++){
 
             sub = subarray(kernelsize, image, i, j);
 
@@ -181,18 +191,18 @@ int** threshold(int** image, Size imsize, Size kernelsize, int offset){
                     mean += sub[p][q];
 
                     if(p == kernelsize.rows - 1 && q == kernelsize.cols - 1){
-                        mean = (int) mean/(p*q); //Lite oklart hur vi ska göra med avrundning, om man castar så avrundas det alltid neråt, finns en round funktion i math.h
+                        mean = (int) mean/(p*q);
                     }
                 }
             }
 
-            thresholded[i][j] = (image[i][j] > mean) ? 255 : 0;
+            thresholded[i][j] = (image[i][j] > ( mean - offset )) ? 255 : 0;
             mean = 0;
         }
     }
 
     //Oklart om vi ska göra en free här
-    free(image);
+    //delete_arr(image);
     return thresholded;
 }
 
@@ -200,17 +210,22 @@ int** diff(int** ref, int** test, Size imsize){
 
     int** difference = create_arr(imsize);
     for(int i = 0; i < imsize.rows; i++){
-        for(int j = 0; j < imsize.cols; i++){
+        for(int j = 0; j < imsize.cols; j++){
             difference[i][j] = abs(ref[i][j] - test[i][j]);
         }
     }
     
     //Oklart om vi ska göra en free här
-    free(test);
+    //delete_arr(test);
     return difference;
 }
 
 int main(int argc, char **argv){
+
+    clock_t start;
+    double elapsed_time;
+
+    start = clock();
 
     Size imsize = { .rows = 200, .cols = 200 };
     Size kernelsize = { .rows = 3, .cols = 3 };
@@ -218,18 +233,20 @@ int main(int argc, char **argv){
 
     image = load_file(imsize, "/numbers.csv");
     image = pad(image, &imsize);
-    image = unpad(image, &imsize);
 
-    export_csv(image, imsize, "output.csv");
-    image = pad(image, &imsize);
+    image = threshold(image, imsize, kernelsize, 20);
     print_arr(image, imsize);
-    int** sub = subarray(kernelsize, image, 200, 200);
-    print_arr(sub, kernelsize);
-    //print_arr(sub, kernelsize);
 
-    if(image != NULL){
-        free(image);
-    }
+    image = unpad(image, &imsize);
+    export_csv(image, imsize, "output.csv");
+
+    elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
+    printf("Execution time: %fs\n", elapsed_time);
+
+    //"delete_arr" funkar inte ibland, tror vi råkar allokera på stacken istället för heapen, men fattar inte riktigt (man ska/kan inte free:a på stacken)
+    // if(image != NULL){
+    //     delete_arr(image, imsize);
+    // }
 
     return 0;
 }
