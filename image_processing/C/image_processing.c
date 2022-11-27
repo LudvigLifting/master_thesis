@@ -32,6 +32,7 @@ void export_csv(int** arr, Size arrsize, char fileName[]){
         printf("File open error..\n");
         exit( -1 );
     }
+
     for(int i = 0; i < arrsize.rows; i++){
         for(int j = 0; j < arrsize.cols; j++){
 
@@ -119,9 +120,10 @@ int** pad(int** image, Size *imsize){
     int** expanded = create_arr(*imsize);
 
     for(int i = 0; i < imsize->rows - 2; i++){
-        memcpy(&expanded[i+1][1], image[i], (size_t)(imsize->cols*sizeof(int) - 2));
+        memcpy(&expanded[i + 1][1], image[i], (size_t)(imsize->cols*sizeof(int) - 2));
     }
 
+    //Oklart om vi ska göra en free här
     free(image);
     return expanded;
 }
@@ -136,6 +138,7 @@ int** unpad(int** image, Size *imsize){
         memcpy(reduced[i], &image[i + 1][1], imsize->cols*sizeof(int));
     }
 
+    //Oklart om vi ska göra en free här
     free(image);
     return reduced;
 }
@@ -155,6 +158,8 @@ int** sobel(int** image, Size imsize){
 
     int** sobeld = create_arr(imsize);
 
+    //Oklart om vi ska göra en free här
+    free(image);
     return sobeld;
 }
 
@@ -172,6 +177,7 @@ int** threshold(int** image, Size imsize, Size kernelsize, int offset){
             //Calculate mean
             for(int p = 0; p < kernelsize.rows; p++){
                 for(int q = 0; q < kernelsize.rows; q++){
+                    
                     mean += sub[p][q];
 
                     if(p == kernelsize.rows - 1 && q == kernelsize.cols - 1){
@@ -185,6 +191,8 @@ int** threshold(int** image, Size imsize, Size kernelsize, int offset){
         }
     }
 
+    //Oklart om vi ska göra en free här
+    free(image);
     return thresholded;
 }
 
@@ -196,7 +204,9 @@ int** diff(int** ref, int** test, Size imsize){
             difference[i][j] = abs(ref[i][j] - test[i][j]);
         }
     }
-
+    
+    //Oklart om vi ska göra en free här
+    free(test);
     return difference;
 }
 
@@ -217,6 +227,9 @@ int main(int argc, char **argv){
     print_arr(sub, kernelsize);
     //print_arr(sub, kernelsize);
 
-    free(image);
+    if(image != NULL){
+        free(image);
+    }
+
     return 0;
 }
