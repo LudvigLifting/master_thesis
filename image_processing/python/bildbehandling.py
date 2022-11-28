@@ -278,8 +278,8 @@ def example():
     images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
     
     dump_csv(images[0])
-    reference = cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
-    image = cv2.GaussianBlur(images[1],(3,3),cv2.BORDER_DEFAULT)
+    reference = images[0] #cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
+    image = images[1] #cv2.GaussianBlur(images[1],(3,3),cv2.BORDER_DEFAULT)
 
     plt.figure("Reference image")
     plt.subplot(2, 1, 1)
