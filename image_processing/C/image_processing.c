@@ -261,10 +261,33 @@ int main(int argc, char **argv){
     image = pad(image, &imsize);
 
     image = sobel(image, imsize, kernelsize);
-    image = threshold(image, imsize, kernelsize, 30);
+    //image = threshold(image, imsize, kernelsize, 30);
     image = unpad(image, &imsize);
 
-    export_csv(image, imsize, "output.csv");
+    // SOBEL TEST //
+    Size lolsize = { .rows = 9, .cols = 9 };
+    int** test = create_arr(lolsize);
+    int lol[9][9] = {{163, 151, 162, 85, 83, 190, 241, 252, 249},
+            {121, 107, 82, 20, 19, 233, 226, 45, 81},
+            {142, 31, 86, 8, 87, 39, 167, 5, 212},
+            {208, 82, 130, 119, 117, 27, 153, 74, 237},
+            {88, 61, 106, 82, 54, 213, 36, 74, 104},
+            {142, 173, 149, 95, 60, 53, 181, 196, 140},
+            {221, 108, 17, 50, 61, 226, 180, 180, 89},
+            {207, 206, 35, 61, 39, 223, 167, 249, 150},
+            {252, 30, 224, 102, 44, 14, 123, 140, 202}};
+    for(int i = 0; i < lolsize.rows; i++){
+        for(int j = 0; j < lolsize.cols; j++){
+            test[i][j] = lol[i][j];
+        }
+    }
+    test = pad(test, &lolsize);
+    test = sobel(test, lolsize, kernelsize);
+    test = unpad(test, &lolsize);
+    print_arr(test, lolsize);
+    // SOBEL TEST //
+
+    //export_csv(image, imsize, "output.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
     printf("Execution time: %fs\n", elapsed_time);
