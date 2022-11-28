@@ -25,7 +25,7 @@ int** create_arr(Size size){
 
     //Ändra till malloc när allt funkar
 
-    printf("Creating array with size: %dx%d\n", size.rows, size.cols);
+    //printf("Creating array with size: %dx%d\n", size.rows, size.cols);
 
     int** arr = calloc(size.rows, sizeof(int*));
     for(int i = 0; i < size.rows; i++){
@@ -164,10 +164,35 @@ int** subarray(Size ker_size, int** image, int row, int col){
     return sub;
 }
 
-int** sobel(int** image, Size imsize){
+int** sobel(int** image, Size imsize, Size kernelsize){
+
+    int Gx[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1 ,0, 1}};
 
     int** sobeld = create_arr(imsize);
+    int ** sub;
+    int S1;
+    for(int i = 1; i < imsize.rows-1; i++)
+    {
+        for(int j = 1; j < imsize.cols-1; j++)
+        {
+            sub = subarray(kernelsize, image, i, j);
 
+            //Calculate total value over kernel
+            for(int p = 0; p < kernelsize.rows; p++)
+            {
+                for(int l = 0; l < kernelsize.cols; l++)
+                {
+                    for(int q = 0; q < kernelsize.rows; q++)
+                    {                    
+                        S1 += Gx[p][q] * sub[q][l];
+                    }
+                }
+            }
+            S1 = (int)(abs(S1)/12);
+            sobeld[i][j] = S1;
+            S1 = 0;
+        }
+    }
     //Oklart om vi ska göra en free här
     //delete_arr(image);
     return sobeld;
@@ -196,7 +221,7 @@ int** threshold(int** image, Size imsize, Size kernelsize, int offset){
                 }
             }
 
-            thresholded[i][j] = (image[i][j] > ( mean - offset )) ? 255 : 0;
+            thresholded[i][j] = (image[i][j] < ( mean - offset )) ? 255 : 0;
             mean = 0;
         }
     }
@@ -220,6 +245,7 @@ int** diff(int** ref, int** test, Size imsize){
     return difference;
 }
 
+
 int main(int argc, char **argv){
 
     clock_t start;
@@ -234,10 +260,10 @@ int main(int argc, char **argv){
     image = load_file(imsize, "/numbers.csv");
     image = pad(image, &imsize);
 
-    image = threshold(image, imsize, kernelsize, 20);
-    print_arr(image, imsize);
-
+    image = sobel(image, imsize, kernelsize);
+    image = threshold(image, imsize, kernelsize, 30);
     image = unpad(image, &imsize);
+
     export_csv(image, imsize, "output.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
