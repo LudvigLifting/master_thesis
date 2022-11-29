@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h> //For getcwd
 #include <time.h>
+#include <stdbool.h>
 
 #define PATH_MAX    4096
 
@@ -13,7 +14,7 @@ struct Size {
 typedef struct Size Size;
 
 //Lite oklart om denna funkar
-void delete_arr(int** arr, Size size){
+void delete_arr(unsigned char** arr, Size size){
 
     for(int i = 0; i < size.rows; i++){
         free(arr[i]);
@@ -21,21 +22,21 @@ void delete_arr(int** arr, Size size){
     free(arr);
 }
 
-int** create_arr(Size size){
+unsigned char** create_arr(Size size){
 
-    //Ändra till malloc när allt funkar
+    //Ändra till malloc när allt funkar (Förutom den som padding kallar)
 
     //printf("Creating array with size: %dx%d\n", size.rows, size.cols);
 
-    int** arr = calloc(size.rows, sizeof(int*));
+    unsigned char** arr = calloc(size.rows, sizeof(char*));
     for(int i = 0; i < size.rows; i++){
-        arr[i] = calloc(size.cols, sizeof(int));
+        arr[i] = calloc(size.cols, sizeof(char));
     }
 
     return arr;
 }
 
-void export_csv(int** arr, Size arrsize, char fileName[]){
+void export_csv(unsigned char** arr, Size arrsize, char fileName[]){
     
     FILE *csv = fopen(fileName, "w");
     if( csv == NULL ){
@@ -54,9 +55,10 @@ void export_csv(int** arr, Size arrsize, char fileName[]){
             }
         }
     }
+    fclose(csv);
 }
 
-void print_arr(int** arr, Size arrsize){
+void print_arr(unsigned char** arr, Size arrsize){
 
     printf("[");
     for(int i = 0; i < arrsize.rows; i++){
@@ -77,7 +79,7 @@ void print_arr(int** arr, Size arrsize){
     printf("]\n");
 }
 
-int** load_file(Size imsize, char fileName[]){
+unsigned char** load_file(Size imsize, char fileName[]){
 
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
@@ -92,7 +94,7 @@ int** load_file(Size imsize, char fileName[]){
         exit(-1);
     }
 
-    int** image_matrix = create_arr(imsize);
+    unsigned char** image_matrix = create_arr(imsize);
 
     int i = 0;
     int j = 0;
@@ -122,15 +124,15 @@ int** load_file(Size imsize, char fileName[]){
     return image_matrix;
 }
 
-int** pad(int** image, Size *imsize){
+unsigned char** pad(unsigned char** image, Size *imsize){
 
     //Update imsize and allocate new expanded array
     imsize->rows += 2;
     imsize->cols += 2;
-    int** expanded = create_arr(*imsize);
+    unsigned char** expanded = create_arr(*imsize);
 
     for(int i = 0; i < imsize->rows - 2; i++){
-        memcpy(&expanded[i + 1][1], image[i], (size_t)(imsize->cols*sizeof(int) - 2));
+        memcpy(&expanded[i + 1][1], image[i], (size_t)(imsize->cols*sizeof(char) - 2));
     }
 
     //Oklart om vi ska göra en free här
@@ -138,14 +140,14 @@ int** pad(int** image, Size *imsize){
     return expanded;
 }
 
-int** unpad(int** image, Size *imsize){
+unsigned char** unpad(unsigned char** image, Size *imsize){
 
     imsize->rows -= 2;
     imsize->cols -= 2;
-    int** reduced = create_arr(*imsize);
+    unsigned char** reduced = create_arr(*imsize);
 
     for(int i = 0; i < imsize->rows; i++){
-        memcpy(reduced[i], &image[i + 1][1], imsize->cols*sizeof(int));
+        memcpy(reduced[i], &image[i + 1][1], imsize->cols*sizeof(char));
     }
 
     //Oklart om vi ska göra en free här
@@ -153,90 +155,116 @@ int** unpad(int** image, Size *imsize){
     return reduced;
 }
 
-int** subarray(Size ker_size, int** image, int row, int col){
+unsigned char** subarray(Size ker_size, unsigned char** image, int row, int col){
 
-    int** sub = create_arr(ker_size);
+    unsigned char** sub = create_arr(ker_size);
     
     for(int i = 0; i < ker_size.rows; i++){
-        memcpy(sub[i], &image[row + i - 1][col - 1], ker_size.cols*sizeof(int));
+        memcpy(sub[i], &image[row + i - 1][col - 1], ker_size.cols*sizeof(char));
     }
 
     return sub;
 }
 
-int** sobel(int** image, Size imsize, Size kernelsize){
+// int** sobel(int** image, Size imsize, Size kernelsize){
 
-    int Gx[3][3] = {{1, 0, -1}, {2, 0, -2}, {1 ,0, -1}};
+//     int h[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1 ,0, 1}};
+//     //int h[3][3] = {{1, 0, -1}, {2, 0, -2}, {1 ,0, -1}};
 
-    int** sobeld = create_arr(imsize);
-    int ** sub;
-    int S1;
+//     int** sobeld = create_arr(imsize);
+//     int ** sub;
+//     int S1 = 0;
+//     for(int i = 1; i < imsize.rows-1; i++)
+//     {
+//         for(int j = 1; j < imsize.cols-1; j++)
+//         {
+//             sub = subarray(kernelsize, image, i, j);
+
+//             //Calculate total value over kernel
+//             for(int p = 0; p < kernelsize.rows; p++)
+//             {
+//                 for(int q = 0; q < kernelsize.cols; q++)
+//                 {
+//                     S1 += h[p][q] * sub[p][q];
+//                 }
+//             }
+//             S1 = (int)(abs(S1)/4);
+//             sobeld[i][j] = S1;
+//             S1 = 0;
+//         }
+//     }
+//     //Oklart om vi ska göra en free här
+//     //delete_arr(image);
+//     return sobeld;
+// }
+
+unsigned char** sobel(unsigned char** image, Size imsize, Size kernelsize, bool xy){
+
+    unsigned char** sobeld = create_arr(imsize);
+    int x = 0;
+    int y = 0;
+
     for(int i = 1; i < imsize.rows-1; i++)
     {
         for(int j = 1; j < imsize.cols-1; j++)
         {
-            sub = subarray(kernelsize, image, i, j);
-
-            //Calculate total value over kernel
-            for(int p = 0; p < kernelsize.rows; p++)
-            {
-                for(int l = 0; l < kernelsize.cols; l++)
-                {
-                    for(int q = 0; q < kernelsize.rows; q++)
-                    {                    
-                        S1 += Gx[p][q] * sub[q][l];
-                    }
-                }
+            x = -0.25*(image[i - 1][j - 1] + image[i + 1][j - 1]) + image[i - 1][j + 1] + image[i + 1][j + 1] + 2*(image[i][j + 1] - image[i][j - 1]);
+            if(xy){
+                y = -0.25*(image[i + 1][j - 1] + image[i + 1][j + 1]) + image[i - 1][j - 1] + image[i - 1][j + 1] + 2*(image[i - 1][j] - image[i + 1][j]);
+                sobeld[i][j] = (unsigned char) (abs(x) + abs(y));
             }
-            S1 = (int)(abs(S1)/12);
-            sobeld[i][j] = S1;
-            S1 = 0;
+            else{
+                sobeld[i][j] = (unsigned char) (abs(x));
+            }
         }
     }
+    
     //Oklart om vi ska göra en free här
     //delete_arr(image);
     return sobeld;
 }
 
-int** threshold(int** image, Size imsize, Size kernelsize, int offset){
+unsigned char** threshold(unsigned char** image, Size imsize, Size kernelsize, int offset){
 
-    int** thresholded = create_arr(imsize);
-    int** sub;
+    unsigned char** thresholded = create_arr(imsize);
     int mean;
 
     for(int i = 1; i < imsize.rows - 1; i++){
         for(int j = 1; j < imsize.cols - 1; j++){
 
-            sub = subarray(kernelsize, image, i, j);
+            //0.1 pga ungefär /9
+            mean = 0.1*(image[i-1][j-1] + image[i-1][j] + image[i-1][j+1] + image[i][j-1] + image[i][j] + image[i][j+1] + image[i+1][j-1] + image[i+1][j] + image[i+1][j+1]); 
 
-            //Calculate mean
-            for(int p = 0; p < kernelsize.rows; p++){
-                for(int q = 0; q < kernelsize.rows; q++){
-                    
-                    mean += sub[p][q];
-
-                    if(p == kernelsize.rows - 1 && q == kernelsize.cols - 1){
-                        mean = (int) mean/(p*q);
-                    }
-                }
-            }
-
-            thresholded[i][j] = (image[i][j] < ( mean - offset )) ? 255 : 0;
+            thresholded[i][j] = (unsigned char) ((image[i][j] < ( mean - offset )) ? 255 : 0);
             mean = 0;
         }
     }
+    //Gamla threshold
+    //  sub = subarray(kernelsize, image, i, j);
+
+    //         //Calculate mean
+    //         for(int p = 0; p < kernelsize.rows; p++){
+    //             for(int q = 0; q < kernelsize.rows; q++){
+                    
+    //                 mean += sub[p][q];
+
+    //                 if(p == kernelsize.rows - 1 && q == kernelsize.cols - 1){
+    //                     mean = (int) mean/(p*q);
+    //                 }
+    //             }
+    //         }
 
     //Oklart om vi ska göra en free här
     //delete_arr(image);
     return thresholded;
 }
 
-int** diff(int** ref, int** test, Size imsize){
+unsigned char** diff(unsigned char** ref, unsigned char** test, Size imsize){
 
-    int** difference = create_arr(imsize);
+    unsigned char** difference = create_arr(imsize);
     for(int i = 0; i < imsize.rows; i++){
         for(int j = 0; j < imsize.cols; j++){
-            difference[i][j] = abs(ref[i][j] - test[i][j]);
+            difference[i][j] = (unsigned char) abs(ref[i][j] - test[i][j]);
         }
     }
     
@@ -255,47 +283,33 @@ int main(int argc, char **argv){
 
     Size imsize = { .rows = 200, .cols = 200 };
     Size kernelsize = { .rows = 3, .cols = 3 };
-    int** image;
+    unsigned char** image;
 
     image = load_file(imsize, "/numbers.csv");
     image = pad(image, &imsize);
-
-    image = sobel(image, imsize, kernelsize);
-    //image = threshold(image, imsize, kernelsize, 30);
+    image = sobel(image, imsize, kernelsize, true);
+    image = threshold(image, imsize, kernelsize, 20);
     image = unpad(image, &imsize);
 
-    // SOBEL TEST //
-    Size lolsize = { .rows = 9, .cols = 9 };
-    int** test = create_arr(lolsize);
-    int lol[9][9] = {{163, 151, 162, 85, 83, 190, 241, 252, 249},
-            {121, 107, 82, 20, 19, 233, 226, 45, 81},
-            {142, 31, 86, 8, 87, 39, 167, 5, 212},
-            {208, 82, 130, 119, 117, 27, 153, 74, 237},
-            {88, 61, 106, 82, 54, 213, 36, 74, 104},
-            {142, 173, 149, 95, 60, 53, 181, 196, 140},
-            {221, 108, 17, 50, 61, 226, 180, 180, 89},
-            {207, 206, 35, 61, 39, 223, 167, 249, 150},
-            {252, 30, 224, 102, 44, 14, 123, 140, 202}};
-    for(int i = 0; i < lolsize.rows; i++){
-        for(int j = 0; j < lolsize.cols; j++){
-            test[i][j] = lol[i][j];
-        }
-    }
-    test = pad(test, &lolsize);
-    test = sobel(test, lolsize, kernelsize);
-    test = unpad(test, &lolsize);
-    print_arr(test, lolsize);
-    // SOBEL TEST //
-
-    //export_csv(image, imsize, "output.csv");
-
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
-    printf("Execution time: %fs\n", elapsed_time);
 
+    print_arr(image, imsize);
+    export_csv(image, imsize, "output.csv");
+
+    if((int)elapsed_time > 0){
+        printf("Execution time: %.3fs\n", elapsed_time);
+    }
+    else if((int)(elapsed_time*1000) > 0){
+        printf("Execution time: %.3fms\n", 1000*elapsed_time);
+    }
+    else{
+        printf("Execution time: %.3fus\n", 1000000*elapsed_time);
+    }
+    
     //"delete_arr" funkar inte ibland, tror vi råkar allokera på stacken istället för heapen, men fattar inte riktigt (man ska/kan inte free:a på stacken)
-    // if(image != NULL){
-    //     delete_arr(image, imsize);
-    // }
+    if(image != NULL){
+        delete_arr(image, imsize);
+    }
 
     return 0;
 }
