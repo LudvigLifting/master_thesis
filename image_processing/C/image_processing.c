@@ -166,7 +166,7 @@ int** subarray(Size ker_size, int** image, int row, int col){
 
 int** sobel(int** image, Size imsize, Size kernelsize){
 
-    int Gx[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1 ,0, 1}};
+    int Gx[3][3] = {{1, 0, -1}, {2, 0, -2}, {1 ,0, -1}};
 
     int** sobeld = create_arr(imsize);
     int ** sub;
