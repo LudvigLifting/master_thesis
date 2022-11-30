@@ -136,7 +136,8 @@ unsigned char** pad(unsigned char** image, Size *imsize){
     }
 
     //Oklart om vi ska göra en free här
-    //delete_arr(image);
+    // Size size = { .rows=imsize->rows, .cols=imsize->cols };
+    // delete_arr(image, size);
     return expanded;
 }
 
@@ -151,10 +152,12 @@ unsigned char** unpad(unsigned char** image, Size *imsize){
     }
 
     //Oklart om vi ska göra en free här
-    //delete_arr(image);
+    // Size size = { .rows=imsize->rows, .cols=imsize->cols };
+    // delete_arr(image, size);
     return reduced;
 }
 
+//Kanske inte behövs alls, blir typ 3ggr så långsamt med en algoritm + subarray
 unsigned char** subarray(Size ker_size, unsigned char** image, int row, int col){
 
     unsigned char** sub = create_arr(ker_size);
@@ -165,38 +168,6 @@ unsigned char** subarray(Size ker_size, unsigned char** image, int row, int col)
 
     return sub;
 }
-
-// int** sobel(int** image, Size imsize, Size kernelsize){
-
-//     int h[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1 ,0, 1}};
-//     //int h[3][3] = {{1, 0, -1}, {2, 0, -2}, {1 ,0, -1}};
-
-//     int** sobeld = create_arr(imsize);
-//     int ** sub;
-//     int S1 = 0;
-//     for(int i = 1; i < imsize.rows-1; i++)
-//     {
-//         for(int j = 1; j < imsize.cols-1; j++)
-//         {
-//             sub = subarray(kernelsize, image, i, j);
-
-//             //Calculate total value over kernel
-//             for(int p = 0; p < kernelsize.rows; p++)
-//             {
-//                 for(int q = 0; q < kernelsize.cols; q++)
-//                 {
-//                     S1 += h[p][q] * sub[p][q];
-//                 }
-//             }
-//             S1 = (int)(abs(S1)/4);
-//             sobeld[i][j] = S1;
-//             S1 = 0;
-//         }
-//     }
-//     //Oklart om vi ska göra en free här
-//     //delete_arr(image);
-//     return sobeld;
-// }
 
 unsigned char** sobel(unsigned char** image, Size imsize, Size kernelsize, bool xy){
 
@@ -220,7 +191,7 @@ unsigned char** sobel(unsigned char** image, Size imsize, Size kernelsize, bool 
     }
     
     //Oklart om vi ska göra en free här
-    //delete_arr(image);
+    delete_arr(image, imsize);
     return sobeld;
 }
 
@@ -239,23 +210,9 @@ unsigned char** threshold(unsigned char** image, Size imsize, Size kernelsize, i
             mean = 0;
         }
     }
-    //Gamla threshold
-    //  sub = subarray(kernelsize, image, i, j);
-
-    //         //Calculate mean
-    //         for(int p = 0; p < kernelsize.rows; p++){
-    //             for(int q = 0; q < kernelsize.rows; q++){
-                    
-    //                 mean += sub[p][q];
-
-    //                 if(p == kernelsize.rows - 1 && q == kernelsize.cols - 1){
-    //                     mean = (int) mean/(p*q);
-    //                 }
-    //             }
-    //         }
 
     //Oklart om vi ska göra en free här
-    //delete_arr(image);
+    delete_arr(image, imsize);
     return thresholded;
 }
 
