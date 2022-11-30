@@ -179,9 +179,9 @@ unsigned char** sobel(unsigned char** image, Size imsize, Size kernelsize, bool 
     {
         for(int j = 1; j < imsize.cols-1; j++)
         {
-            x = -0.25*(image[i - 1][j - 1] + image[i + 1][j - 1]) + image[i - 1][j + 1] + image[i + 1][j + 1] + 2*(image[i][j + 1] - image[i][j - 1]);
+            x = 0.25*(-(image[i - 1][j - 1] + image[i + 1][j - 1]) + image[i - 1][j + 1] + image[i + 1][j + 1] + 2*(image[i][j + 1] - image[i][j - 1]));
             if(xy){
-                y = -0.25*(image[i + 1][j - 1] + image[i + 1][j + 1]) + image[i - 1][j - 1] + image[i - 1][j + 1] + 2*(image[i - 1][j] - image[i + 1][j]);
+                y = 0.25*(-(image[i + 1][j - 1] + image[i + 1][j + 1]) + image[i - 1][j - 1] + image[i - 1][j + 1] + 2*(image[i - 1][j] - image[i + 1][j]));
                 sobeld[i][j] = (unsigned char) (abs(x) + abs(y));
             }
             else{

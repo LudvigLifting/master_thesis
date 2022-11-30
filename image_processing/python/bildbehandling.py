@@ -256,6 +256,7 @@ def calc_noise_floor():
         diffs.append(diff(benchmark_image, edges[i]))
         nbrs.append(int(np.sum(diffs[int(i/2)])/(200*200))+60)
         print(f"Number of white pixels: {nbrs[int(i/2)]} = {nbrs[int(i/2)]/(diffs[int(i/2)].shape[0]*diffs[int(i/2)].shape[1]):.3f}%")
+
     print(f"means:{len(means)}, nbrs:{len(nbrs)}")
     plt.figure("Noise depending on light intensity")
     plt.grid()
@@ -309,20 +310,16 @@ def example():
 
 def test_sobel():
 
-    arr = np.array([[163, 151, 162, 85, 83, 190, 241, 252, 249],
-                    [121, 107, 82, 20, 19, 233, 226, 45, 81],
-                    [142, 31, 86, 8, 87, 39, 167, 5, 212],
-                    [208, 82, 130, 119, 117, 27, 153, 74, 237],
-                    [88, 61, 106, 82, 54, 213, 36, 74, 104],
-                    [142, 173, 149, 95, 60, 53, 181, 196, 140],
-                    [221, 108, 17, 50, 61, 226, 180, 180, 89],
-                    [207, 206, 35, 61, 39, 223, 167, 249, 150],
-                    [252, 30, 224, 102, 44, 14, 123, 140, 202]], dtype=np.uint8)
+    arr = np.array([[0, 0, 0, 10, 10],
+    [0, 0, 0, 10, 10],
+    [0, 0, 0, 10, 10],
+    [0, 0, 0, 10, 10],
+    [0, 0, 0, 10, 10]], dtype=np.uint8)
     arr = cv2.Sobel(arr, cv2.CV_8U, 1, 0, ksize=3)
     print(arr)
 
 def main():
-    test_sobel()
+    calc_noise_floor()
     exit()
     #pixelcalc()
     dir_path = str(pathlib.Path(__file__).parent.resolve())
