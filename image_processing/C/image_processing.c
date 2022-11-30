@@ -1,66 +1,271 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h> //For getcwd
+#include <time.h>
+#include <stdbool.h>
+
+#define PATH_MAX    4096
 
 struct Size {
-    int height, width;
+    int rows, cols;
 };
 
 typedef struct Size Size;
 
-Size get_image_size(char* fileName){
+//Lite oklart om denna funkar
+void delete_arr(unsigned char** arr, Size size){
 
-    Size size;
-    char temp[4];
-    
-    strncpy(temp, fileName + 10, 3);
-    temp[3] = '\0';
-    size.width = atoi(temp);
-
-    strncpy(temp, fileName + 14, 3);
-    temp[3] = '\0';
-    size.height = atoi(temp);
-
-    return size;
+    for(int i = 0; i < size.rows; i++){
+        free(arr[i]);
+    }
+    free(arr);
 }
 
-int main(void){
+unsigned char** create_arr(Size size){
 
-    printf("\n");
-    FILE *fptr;
-    char path[100] = "../pictures/";
-    char fileName[] = "test_color100x100.jpg";
-    Size size = get_image_size(fileName);
+    //Ändra till malloc när allt funkar (Förutom den som padding kallar)
 
-    printf("Image: width = %d, height = %d\n", size.width, size.height);
+    //printf("Creating array with size: %dx%d\n", size.rows, size.cols);
 
-    printf("concat = %s\n", strcat(path, fileName));
+    unsigned char** arr = calloc(size.rows, sizeof(char*));
+    for(int i = 0; i < size.rows; i++){
+        arr[i] = calloc(size.cols, sizeof(char));
+    }
 
-    fptr = fopen(fileName, "r");
+    return arr;
+}
 
-    if (fptr == NULL){
+void export_csv(unsigned char** arr, Size arrsize, char fileName[]){
+    
+    FILE *csv = fopen(fileName, "w");
+    if( csv == NULL ){
+        printf("File open error..\n");
+        exit( -1 );
+    }
+
+    for(int i = 0; i < arrsize.rows; i++){
+        for(int j = 0; j < arrsize.cols; j++){
+
+            fprintf(csv, "%d", arr[i][j]);
+            if( j < arrsize.cols - 1 ){
+                fprintf(csv, " ");
+            }else{
+                fprintf(csv, "\n");
+            }
+        }
+    }
+    fclose(csv);
+}
+
+void print_arr(unsigned char** arr, Size arrsize){
+
+    printf("[");
+    for(int i = 0; i < arrsize.rows; i++){
+        printf("[");
+        for(int j = 0; j < arrsize.cols; j++){
+            
+            if( j < arrsize.cols - 1 ){
+                printf("%d ", arr[i][j]);
+            }
+            else{
+                printf("%d]", arr[i][j]);
+            }
+        }
+        if( i < arrsize.rows - 1 ){
+            printf("\n ");
+        }
+    }
+    printf("]\n");
+}
+
+unsigned char** load_file(Size imsize, char fileName[]){
+
+    char cwd[PATH_MAX];
+    getcwd(cwd, sizeof(cwd));
+
+    printf("Loading file \"%s\"...\n", strcat(cwd, fileName));
+    printf("cwd = %s\n", cwd);
+    
+    FILE *fptr = fopen(cwd, "r");
+
+    if ( fptr == NULL ){
         printf("File open error..\n");
         exit(-1);
     }
 
-    char number;
-    char* arr;
-    
+    unsigned char** image_matrix = create_arr(imsize);
+
     int i = 0;
+    int j = 0;
+    int number;
 
-    while ( fscanf(fptr, "%c", & number ) == 1 ){ 
-        
-        int arr_size = sizeof(arr)/sizeof(char);
-        if(i >= arr_size){
+    //Load all integers from the csv
+    while ( fscanf(fptr, "%d", &number) != EOF ){
 
-            char temp[arr_size + 100*sizeof(char)];
-            memcpy(temp, arr, arr_size);
-            arr = temp;
-            free(temp);
+        if( i > imsize.rows-1 ){
+            //Matrix full
+            break;
         }
-        arr[i] = number; 
-        i++;
-    } 
+
+        image_matrix[i][j] = number;
+
+        if( j != 0 && j % ( imsize.cols - 1 ) == 0 ){
+            //New row
+            i++;
+            j = 0;
+        }else{
+            j++;
+        }
+    }
+
+    fclose(fptr);
+
+    return image_matrix;
+}
+
+unsigned char** pad(unsigned char** image, Size *imsize){
+
+    //Update imsize and allocate new expanded array
+    imsize->rows += 2;
+    imsize->cols += 2;
+    unsigned char** expanded = create_arr(*imsize);
+
+    for(int i = 0; i < imsize->rows - 2; i++){
+        memcpy(&expanded[i + 1][1], image[i], (size_t)(imsize->cols*sizeof(char) - 2));
+    }
+
+    //Oklart om vi ska göra en free här
+    // Size size = { .rows=imsize->rows, .cols=imsize->cols };
+    // delete_arr(image, size);
+    return expanded;
+}
+
+unsigned char** unpad(unsigned char** image, Size *imsize){
+
+    imsize->rows -= 2;
+    imsize->cols -= 2;
+    unsigned char** reduced = create_arr(*imsize);
+
+    for(int i = 0; i < imsize->rows; i++){
+        memcpy(reduced[i], &image[i + 1][1], imsize->cols*sizeof(char));
+    }
+
+    //Oklart om vi ska göra en free här
+    // Size size = { .rows=imsize->rows, .cols=imsize->cols };
+    // delete_arr(image, size);
+    return reduced;
+}
+
+//Kanske inte behövs alls, blir typ 3ggr så långsamt med en algoritm + subarray
+unsigned char** subarray(Size ker_size, unsigned char** image, int row, int col){
+
+    unsigned char** sub = create_arr(ker_size);
+    
+    for(int i = 0; i < ker_size.rows; i++){
+        memcpy(sub[i], &image[row + i - 1][col - 1], ker_size.cols*sizeof(char));
+    }
+
+    return sub;
+}
+
+unsigned char** sobel(unsigned char** image, Size imsize, bool xy){
+
+    unsigned char** sobeld = create_arr(imsize);
+    int x = 0;
+    int y = 0;
+
+    for(int i = 1; i < imsize.rows-1; i++)
+    {
+        for(int j = 1; j < imsize.cols-1; j++)
+        {
+            x = 0.25*(-(image[i - 1][j - 1] + image[i + 1][j - 1]) + image[i - 1][j + 1] + image[i + 1][j + 1] + 2*(image[i][j + 1] - image[i][j - 1]));
+            if(xy){
+                y = 0.25*(-(image[i + 1][j - 1] + image[i + 1][j + 1]) + image[i - 1][j - 1] + image[i - 1][j + 1] + 2*(image[i - 1][j] - image[i + 1][j]));
+                sobeld[i][j] = (unsigned char) (abs(x) + abs(y));
+            }
+            else{
+                sobeld[i][j] = (unsigned char) (abs(x));
+            }
+        }
+    }
+    
+    //Oklart om vi ska göra en free här
+    delete_arr(image, imsize);
+    return sobeld;
+}
+
+unsigned char** threshold(unsigned char** image, Size imsize, int offset){
+
+    unsigned char** thresholded = create_arr(imsize);
+    int mean;
+
+    for(int i = 1; i < imsize.rows - 1; i++){
+        for(int j = 1; j < imsize.cols - 1; j++){
+
+            //0.1 pga ungefär /9
+            mean = 0.1*(image[i-1][j-1] + image[i-1][j] + image[i-1][j+1] + image[i][j-1] + image[i][j] + image[i][j+1] + image[i+1][j-1] + image[i+1][j] + image[i+1][j+1]); 
+
+            thresholded[i][j] = (unsigned char) ((image[i][j] < ( mean - offset )) ? 255 : 0);
+            mean = 0;
+        }
+    }
+
+    //Oklart om vi ska göra en free här
+    delete_arr(image, imsize);
+    return thresholded;
+}
+
+unsigned char** diff(unsigned char** ref, unsigned char** test, Size imsize){
+
+    unsigned char** difference = create_arr(imsize);
+    for(int i = 0; i < imsize.rows; i++){
+        for(int j = 0; j < imsize.cols; j++){
+            difference[i][j] = (unsigned char) abs(ref[i][j] - test[i][j]);
+        }
+    }
+    
+    //Oklart om vi ska göra en free här
+    //delete_arr(test);
+    return difference;
+}
+
+
+int main(int argc, char **argv){
+
+    clock_t start;
+    double elapsed_time;
+
+    start = clock();
+
+    Size imsize = { .rows = 200, .cols = 200 };
+    unsigned char** image;
+
+    image = load_file(imsize, "/numbers.csv");
+    image = pad(image, &imsize);
+    image = sobel(image, imsize, false);
+    image = threshold(image, imsize, 5);
+    image = unpad(image, &imsize);
+
+    elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
+
+    print_arr(image, imsize);
+    export_csv(image, imsize, "output.csv");
+
+    if((int)elapsed_time > 0){
+        printf("Execution time: %.3fs\n", elapsed_time);
+    }
+    else if((int)(elapsed_time*1000) > 0){
+        printf("Execution time: %.3fms\n", 1000*elapsed_time);
+    }
+    else{
+        printf("Execution time: %.3fus\n", 1000000*elapsed_time);
+    }
+    
+    //"delete_arr" funkar inte ibland, tror vi råkar allokera på stacken istället för heapen, men fattar inte riktigt (man ska/kan inte free:a på stacken)
+    if(image != NULL){
+        delete_arr(image, imsize);
+    }
 
     return 0;
 }

@@ -7,11 +7,14 @@ import os
 import time
 import pathlib
 import math
-from picamera import PiCamera
+#from picamera import PiCamera
+
+def dump_csv(image: np.ndarray) -> None:
+
+    image.tofile(str(pathlib.Path(__file__).parent.resolve()) + "/../C/numbers.csv", sep=' ', format='%d')
 
 def histo(image: np.ndarray, name: str="") -> None:
 
-    plt.figure(f"Histogram of {name}")
     flattened = np.ravel(image)
     plt.hist(flattened, len(flattened))
     if name == "":
@@ -144,7 +147,7 @@ def scale_light(image1: np.ndarray, image2: np.ndarray) -> np.ndarray:
     im1 = np.reshape(np.array([np.uint8(pixel*(mean2/mean1) if pixel*(mean2/mean1) < 255 else 255) for pixel in np.ravel(im1)]), image1.shape)
     im2 = np.reshape(np.array([np.uint8(pixel*(mean1/mean2) if pixel*(mean1/mean2) < 255 else 255) for pixel in np.ravel(im2)]), image2.shape)
     
-    return np.array([im1, im2])
+    return im2
 
 def crop(image: np.ndarray, percentage: int, ratio: int=1) -> np.ndarray:
     
@@ -179,7 +182,8 @@ def unpad(image: np.ndarray) -> np.ndarray:
 def sobel_threshold(image: np.ndarray, type_ba: str="basic") -> np.ndarray:
     
     #Sobel on image
-    sobel = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
+    #sobel = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
+    sobel = image.copy()
     
     th_scheme = "mean"
     if type_ba == "global":
@@ -193,7 +197,7 @@ def sobel_threshold(image: np.ndarray, type_ba: str="basic") -> np.ndarray:
         #padding
         start = time.time()
         sobel = pad(sobel)
-        print(f"Time padding: {time.time() - start}s..")
+        #print(f"Time padding: {time.time() - start}s..")
         (rows, cols) = sobel.shape
         flattened = np.ravel(sobel)
         offset = 20
@@ -203,20 +207,26 @@ def sobel_threshold(image: np.ndarray, type_ba: str="basic") -> np.ndarray:
         for row in range(pad_offset, rows-pad_offset):
             for col in range(pad_offset, cols-pad_offset):
                 index = row*cols+col
-                sobel[row][col] = adaptive(sub_3x3(flattened, index, (rows, cols)), flattened[index], offset, th_scheme)
-        print(f"Time sobel threshold: {time.time() - start}s..")
-        start = time.time()
+                #start = time.time()
+                sub = sub_3x3(flattened, index, (rows, cols))
+                # print(f"Time sub 3x3: {time.time() - start}s..")
+                #start = time.time()
+                sobel[row][col] = adaptive(sub, flattened[index], offset, th_scheme)
+                # print(f"Time adaptive: {time.time() - start}s..")
+        # print(f"Time sobel threshold: {time.time() - start}s..")
+        #start = time.time()
         sobel = unpad(sobel)
-        print(f"Time unpadding: {time.time() - start}s..")
+        #print(f"Time unpadding: {time.time() - start}s..")
         return sobel
     
 def calc_noise_floor():
-    camera = PiCamera()
-    camera.color_effects = (128, 128) #svartvit
-    resolution = (200, 200)
+    #camera = PiCamera()
+    #camera.color_effects = (128, 128) #svartvit
+    #resolution = (200, 200)
     dir_path = "/home/exjobb/code/master_thesis/image_processing/pictures/many/" 
+    np.stack
 
-    nbr_images = 2
+    nbr_images = 10
     # for i in range(nbr_images):
     #     print(f"image {i}")
     #     camera.resolution = resolution
@@ -225,32 +235,92 @@ def calc_noise_floor():
     #     print("done")
     
     start = time.time()
-    files = [str(i) + ".jpg" for i in range(nbr_images)]
+    files = [str(i) + ".jpg" for i in range(nbr_images+1)]
     folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/many/"
     images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
     print(f"File load completed in {time.time() - start}s..")
-    means = [image.mean() for image in images]
-    means = [means[i]+means[i+1] for i in range(0, len(means), 2)]
+    means = [image.mean() for image in images[1:len(images)]]
+    means = sorted([(means[i]+means[i+1])/2 for i in range(len(means)-1)])
+    
 
     start = time.time()
-    edges = [sobel_threshold(image, "adaptive") for image in images]
+    edges = [sobel_threshold(image, "adaptive") for image in images[:len(images)-1]]
     print(f"Sobel thresholding completed in {time.time() - start}s..")
+    
+    benchmark_image = edges[0]
     
     start = time.time()
     diffs = []
     nbrs = []
-    for i in range(0, len(edges), 2):
-        diffs.append(diff(edges[i], edges[i+1]))
-        nbrs.append(int(np.sum(diffs[int(i/2)])/255))
+    for i in range(1, len(edges)):
+        diffs.append(diff(benchmark_image, edges[i]))
+        nbrs.append(int(np.sum(diffs[int(i/2)])/(200*200))+60)
         print(f"Number of white pixels: {nbrs[int(i/2)]} = {nbrs[int(i/2)]/(diffs[int(i/2)].shape[0]*diffs[int(i/2)].shape[1]):.3f}%")
-    plt.bar(means, nbrs)
-    plt.xlabel("mean light value")
-    plt.ylabel("light noise")
+
+    print(f"means:{len(means)}, nbrs:{len(nbrs)}")
+    plt.figure("Noise depending on light intensity")
+    plt.grid()
+    #sub = plt.subplot(2, 1, 1)
+    #sub.title.set_text(f"Relative light intensity")
+    plt.plot(means, label = "intensity", linestyle="-")
+    #sub = plt.subplot(2, 1, 2)
+    #sub.title.set_text(f"Relative noise")
+    plt.plot(nbrs, label = "noise", linestyle="--")
     print(f"Pixel calculations completed in {time.time() - start}s..")
+    plt.legend()
     plt.show()
+
+def example():
+
+    # files = [str(0) + ".jpg", str(70) + ".jpg"]
+    # folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/many/"
+    files = ["ext0/200x200.jpg", "ext4/200x200.jpg"]
+    folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/"
+    images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
     
+    dump_csv(images[0])
+    reference = images[0] #cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
+    image = images[1] #cv2.GaussianBlur(images[1],(3,3),cv2.BORDER_DEFAULT)
+
+    plt.figure("Reference image")
+    plt.subplot(2, 1, 1)
+    plt.imshow(reference, cmap="gray")
+    plt.subplot(2, 1, 2)
+    plt.imshow(image, cmap="gray")
+
+    reference = cv2.Sobel(reference, cv2.CV_8U, 1, 0, ksize=3)
+    image = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
+    
+    plt.figure("Sobel")
+    plt.imshow(image, cmap="gray")
+
+    reference = sobel_threshold(reference, "adaptive")
+    image = sobel_threshold(image, "adaptive")
+
+    plt.figure("Thresholding")
+    plt.imshow(image, cmap="gray")
+
+    dif = diff(reference, image)
+    dif = filter_dots(dif, 2)
+
+    plt.figure("Diff image")
+    plt.imshow(dif, cmap="gray")
+
+    plt.show()
+
+def test_sobel():
+
+    arr = np.array([[0, 0, 0, 10, 10],
+    [0, 0, 0, 10, 10],
+    [0, 0, 0, 10, 10],
+    [0, 0, 0, 10, 10],
+    [0, 0, 0, 10, 10]], dtype=np.uint8)
+    arr = cv2.Sobel(arr, cv2.CV_8U, 1, 0, ksize=3)
+    print(arr)
 
 def main():
+    calc_noise_floor()
+    exit()
     #pixelcalc()
     dir_path = str(pathlib.Path(__file__).parent.resolve())
     folder = ["/../pictures/many" + str(n) for n in range(4)]
