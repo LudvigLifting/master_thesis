@@ -169,7 +169,7 @@ unsigned char** subarray(Size ker_size, unsigned char** image, int row, int col)
     return sub;
 }
 
-unsigned char** sobel(unsigned char** image, Size imsize, Size kernelsize, bool xy){
+unsigned char** sobel(unsigned char** image, Size imsize, bool xy){
 
     unsigned char** sobeld = create_arr(imsize);
     int x = 0;
@@ -195,7 +195,7 @@ unsigned char** sobel(unsigned char** image, Size imsize, Size kernelsize, bool 
     return sobeld;
 }
 
-unsigned char** threshold(unsigned char** image, Size imsize, Size kernelsize, int offset){
+unsigned char** threshold(unsigned char** image, Size imsize, int offset){
 
     unsigned char** thresholded = create_arr(imsize);
     int mean;
@@ -239,13 +239,12 @@ int main(int argc, char **argv){
     start = clock();
 
     Size imsize = { .rows = 200, .cols = 200 };
-    Size kernelsize = { .rows = 3, .cols = 3 };
     unsigned char** image;
 
     image = load_file(imsize, "/numbers.csv");
     image = pad(image, &imsize);
-    image = sobel(image, imsize, kernelsize, true);
-    image = threshold(image, imsize, kernelsize, 20);
+    image = sobel(image, imsize, false);
+    image = threshold(image, imsize, 5);
     image = unpad(image, &imsize);
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
