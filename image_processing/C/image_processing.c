@@ -14,6 +14,13 @@ struct Size {
 
 typedef struct Size Size;
 
+struct Image {
+    unsigned char** image1;
+    int intensity;
+};
+
+typedef struct Image Image;
+
 //Lite oklart om denna funkar
 void delete_arr(unsigned char** arr, Size size){
 
@@ -49,10 +56,16 @@ unsigned char** create_arr(Size size, bool mal){
 }
 
 void export_csv(unsigned char** arr, Size arrsize, char fileName[]){
+
+    char cwd[PATH_MAX];
+    getcwd(cwd, sizeof(cwd));
+
+    //printf("Exporting file \"%s\"\n...\n", strcat(cwd, fileName));
     
-    FILE *csv = fopen(fileName, "w");
+    FILE *csv = fopen(cwd, "w");
+    
     if( csv == NULL ){
-        printf("File open error.. %s\n", strerror(errno));
+        printf("Export: file open error.. %s\n", strerror(errno));
         exit( -1 );
     }
 
@@ -94,16 +107,16 @@ void print_arr(unsigned char** arr, Size arrsize){
 }
 
 unsigned char** load_file(Size imsize, char fileName[]){
-
+    
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
 
-    printf("Loading file \"%s\"\n...\n", strcat(cwd, fileName));
+    //printf("Loading file \"%s\"\n...\n", strcat(cwd, fileName));
     
     FILE *fptr = fopen(cwd, "r");
 
     if ( fptr == NULL ){
-        printf("File open error..\n");
+        printf("Load: File open error..(%s)\n", strerror(errno));
         exit(-1);
     }
 
@@ -245,8 +258,9 @@ unsigned char** diff(unsigned char** ref, unsigned char** test, Size imsize){
     return difference;
 }
 
-//Om vi ska ha detta
 int calc_floor(unsigned char** diff, Size size){
+
+
     
     int mean = 0;
     for(int i = 0; i < size.rows; i++){
@@ -284,7 +298,7 @@ bool decision(unsigned char** diff, Size size, int floor){
 void process(char file[], char output[]){
 
     Size imsize = { .rows = 200, .cols = 200 };
-    unsigned char** image = create_arr(imsize, true);
+    unsigned char** image = create_arr(imsize, false);
 
     image = load_file(imsize, file);
     image = pad(image, &imsize);
@@ -293,6 +307,10 @@ void process(char file[], char output[]){
     image = unpad(image, &imsize);
 
     export_csv(image, imsize, output);
+    
+    if(image != NULL){
+        delete_arr(image, imsize);
+    }
 }
 
 void many_images(){
@@ -306,7 +324,6 @@ void many_images(){
         sprintf(&out[5], "%d", i);
         strcat(file, ".csv");
         strcat(out, ".csv");
-
         process(file, out);
 
         file[6] = '\0';
@@ -314,29 +331,117 @@ void many_images(){
     }
 }
 
-int main(int argc, char **argv){
-
-    many_images();
-    return 0;
-
-    clock_t start;
-    double elapsed_time;
-
-    start = clock();
-
+void one_image(){
     Size imsize = { .rows = 200, .cols = 200 };
-    unsigned char** image;
+    unsigned char** image = create_arr(imsize, false);
 
     image = load_file(imsize, "/numbers.csv");
     image = pad(image, &imsize);
     image = sobel(image, imsize, false);
     image = threshold(image, imsize, 5);
     image = unpad(image, &imsize);
-
-    elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
-
     print_arr(image, imsize);
     export_csv(image, imsize, "output.csv");
+
+    if(image != NULL){
+        delete_arr(image, imsize);
+    }
+}
+
+int calc_avg_intensity(unsigned char** image, Size size){
+
+    int intensity = 0;
+
+    for(int i = 0; i < size.rows; i++){
+        for(int j = 0; j < size.cols; j++){
+            intensity += image[i][j];
+        }
+    }
+
+    intensity = intensity/(size.rows*size.cols);
+
+    return intensity;
+}
+
+Image* load_many(int nbr_images){
+    
+    Image* images = malloc(nbr_images * sizeof(Image));
+    unsigned char** temp;
+    Size imsize = { .rows = 200, .cols = 200 };
+    int lol = 0;
+
+    char file[13] = "/many/";
+
+    for(int i = 0; i < nbr_images; i++){
+
+        sprintf(&file[6], "%d", i);
+        strcat(file, ".csv");
+
+        temp = load_file(imsize, file);
+        images[i].image1 = temp;
+        if(lol < 1){
+            print_arr(images[i].image1, imsize);
+        }
+        images[i].intensity = calc_avg_intensity(images[i].image1, imsize);
+        lol++;
+        file[6] = '\0';
+    }
+
+    return images;
+}
+
+void image_sort(Image* images, int nbr_images){
+
+    printf("Before sort: \n");
+    for(int i = 0; i < nbr_images; i++){
+        printf("%d, ", images[i].intensity);
+    }
+    printf("\n");
+
+    int i, j, min_idx;
+ 
+    // One by one move boundary of unsorted subarray
+    for (i = 0; i < nbr_images - 1; i++) {
+
+
+ 
+        // Find the minimum element in unsorted array
+        min_idx = i;
+        for (j = i + 1; j < nbr_images; j++)
+            if (images[j].intensity < images[min_idx].intensity)
+                min_idx = j;
+ 
+        // Swap the found minimum element
+        // with the first element
+        Image temp = images[min_idx];
+        images[min_idx] = images[i];
+        images[i] = temp;
+    }
+
+    printf("After sort: \n");
+    for(int i = 0; i < nbr_images; i++){
+        printf("%d, ", images[i].intensity);
+    }
+    printf("\n");
+}
+
+int main(int argc, char **argv){
+
+    clock_t start;
+    double elapsed_time;
+
+    start = clock();
+
+    int nbr_images = 100;
+    Image* images_doubles = malloc((int)(nbr_images/2) * sizeof(Image));
+    Image* images = load_many(nbr_images);
+    image_sort(images, nbr_images);
+    
+
+    //many_images();
+    //one_image();
+
+    elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 
     if((int)elapsed_time > 0){
         printf("Execution time: %.3fs\n", elapsed_time);
@@ -348,9 +453,9 @@ int main(int argc, char **argv){
         printf("Execution time: %.3fus\n", 1000000*elapsed_time);
     }
     
-    if(image != NULL){
-        delete_arr(image, imsize);
-    }
+    // if(image != NULL){
+    //     delete_arr(image, imsize);
+    // }
 
     return 0;
 }
