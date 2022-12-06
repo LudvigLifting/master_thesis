@@ -9,9 +9,9 @@ import pathlib
 import math
 #from picamera import PiCamera
 
-def dump_csv(image: np.ndarray) -> None:
+def dump_csv(image: np.ndarray, filename: str) -> None:
 
-    image.tofile(str(pathlib.Path(__file__).parent.resolve()) + "/../C/numbers.csv", sep=' ', format='%d')
+    image.tofile(str(pathlib.Path(__file__).parent.resolve()) + "/../C/many/" + filename, sep=' ', format='%d')
 
 def histo(image: np.ndarray, name: str="") -> None:
 
@@ -311,15 +311,23 @@ def example():
 def test_sobel():
 
     arr = np.array([[0, 0, 0, 10, 10],
-    [0, 0, 0, 10, 10],
-    [0, 0, 0, 10, 10],
-    [0, 0, 0, 10, 10],
-    [0, 0, 0, 10, 10]], dtype=np.uint8)
+                    [0, 0, 0, 10, 10],
+                    [0, 0, 0, 10, 10],
+                    [0, 0, 0, 10, 10],
+                    [0, 0, 0, 10, 10]], dtype=np.uint8)
     arr = cv2.Sobel(arr, cv2.CV_8U, 1, 0, ksize=3)
     print(arr)
+    
+def dump_many():
+    dir_path = str(pathlib.Path(__file__).parent.resolve())
+    folder = "/../pictures/many/"
+    files = [str(i) + ".jpg" for i in range(100)]
+    images = [cv2.cvtColor(cv2.imread(dir_path + folder + file), cv2.COLOR_BGR2GRAY) for file in files]
+
+    for i, image in enumerate(images):
+        dump_csv(image, str(i) + ".csv")
 
 def main():
-    calc_noise_floor()
     exit()
     #pixelcalc()
     dir_path = str(pathlib.Path(__file__).parent.resolve())

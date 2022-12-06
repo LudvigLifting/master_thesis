@@ -4,6 +4,7 @@
 #include <unistd.h> //For getcwd
 #include <time.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #define PATH_MAX    4096
 
@@ -51,7 +52,7 @@ void export_csv(unsigned char** arr, Size arrsize, char fileName[]){
     
     FILE *csv = fopen(fileName, "w");
     if( csv == NULL ){
-        printf("File open error..\n");
+        printf("File open error.. %s\n", strerror(errno));
         exit( -1 );
     }
 
@@ -217,7 +218,7 @@ unsigned char** threshold(unsigned char** image, Size imsize, int offset){
     for(int i = 1; i < imsize.rows - 1; i++){
         for(int j = 1; j < imsize.cols - 1; j++){
 
-            mean = 0.1*(image[i-1][j-1] + image[i-1][j] + image[i-1][j+1] + image[i][j-1] + image[i][j] + image[i][j+1] + image[i+1][j-1] + image[i+1][j] + image[i+1][j+1]); 
+            mean = 0.125*(image[i-1][j-1] + image[i-1][j] + image[i-1][j+1] + image[i][j-1] + image[i][j+1] + image[i+1][j-1] + image[i+1][j] + image[i+1][j+1]);
 
             thresholded[i][j] = (unsigned char) ((image[i][j] < ( mean - offset )) ? 255 : 0);
             mean = 0;
@@ -297,14 +298,14 @@ void process(char file[], char output[]){
 void many_images(){
 
     char file[13] = "/many/";
-    char buff[100];
     char out[12] = "/out/";
 
     for(int i = 0; i < 100; i++){
+
         sprintf(&file[6], "%d", i);
         sprintf(&out[5], "%d", i);
-        strcat(file, ".csv\0");
-        strcat(out, ".csv\0");
+        strcat(file, ".csv");
+        strcat(out, ".csv");
 
         process(file, out);
 
