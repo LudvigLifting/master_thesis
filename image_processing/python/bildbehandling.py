@@ -323,11 +323,12 @@ def dump_many():
     folder = "/../pictures/many/"
     files = [str(i) + ".jpg" for i in range(100)]
     images = [cv2.cvtColor(cv2.imread(dir_path + folder + file), cv2.COLOR_BGR2GRAY) for file in files]
-
+    
     for i, image in enumerate(images):
         dump_csv(image, str(i) + ".csv")
 
 def main():
+    dump_many()
     exit()
     #pixelcalc()
     dir_path = str(pathlib.Path(__file__).parent.resolve())

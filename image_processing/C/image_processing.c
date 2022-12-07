@@ -260,19 +260,6 @@ unsigned char** diff(unsigned char** ref, unsigned char** test, Size imsize){
     return difference;
 }
 
-int calc_noise(unsigned char** difference, Size size){
-
-    int noise = 0;
-    for(int i = 0; i < size.rows; i++){
-        for(int j = 0; j < size.cols; j++){
-            if(difference[i][j] > 0){
-                noise++;
-            }
-        }
-    }
-    return noise;
-}
-
 bool decision(unsigned char** diff, Size size, int floor){
 
     int nbr = 0;
@@ -295,6 +282,21 @@ bool decision(unsigned char** diff, Size size, int floor){
     return decide;
 }
 
+int calc_avg_intensity(unsigned char** image, Size size){
+
+    int intensity = 0;
+
+    for(int i = 0; i < size.rows; i++){
+        for(int j = 0; j < size.cols; j++){
+            intensity += image[i][j];
+        }
+    }
+
+    intensity = intensity/(size.rows*size.cols);
+
+    return intensity;
+}
+
 void process(char file[], char output[]){
 
     Size imsize = { .rows = 200, .cols = 200 };
@@ -313,7 +315,7 @@ void process(char file[], char output[]){
     }
 }
 
-void many_images(){
+void process_many_images(){
 
     char file[13] = "/many/";
     char out[12] = "/out/";
@@ -348,26 +350,15 @@ void one_image(){
     }
 }
 
-int calc_avg_intensity(unsigned char** image, Size size){
+void calc_noise_floor(Size imsize){
 
-    int intensity = 0;
 
-    for(int i = 0; i < size.rows; i++){
-        for(int j = 0; j < size.cols; j++){
-            intensity += image[i][j];
-        }
-    }
-
-    intensity = intensity/(size.rows*size.cols);
-
-    return intensity;
-}
-
-Image* load_many(int nbr_images){
-    
+    int nbr_images = 100;
+    Image* images_doubles = malloc((int)(nbr_images/2) * sizeof(Image));
     Image* images = malloc(nbr_images * sizeof(Image));
-    unsigned char** temp;
-    Size imsize = { .rows = 200, .cols = 200 };
+    Image temp;
+    int min_idx, i, j, noise;
+    unsigned char** temp_img;
 
     char file[13] = "/many/";
 
@@ -376,19 +367,13 @@ Image* load_many(int nbr_images){
         sprintf(&file[6], "%d", i);
         strcat(file, ".csv");
 
-        temp = load_file(imsize, file);
-        images[i].image = temp;
+        temp_img = load_file(imsize, file);
+        images[i].image = temp_img;
         images[i].intensity = calc_avg_intensity(images[i].image, imsize);
         file[6] = '\0';
     }
 
-    return images;
-}
-
-void image_sort(Image* images, int nbr_images){
-
-    int i, j, min_idx;
- 
+    //Sorting
     for (i = 0; i < nbr_images - 1; i++) {
 
         min_idx = i;
@@ -396,43 +381,45 @@ void image_sort(Image* images, int nbr_images){
             if (images[j].intensity < images[min_idx].intensity)
                 min_idx = j;
  
-        Image temp = images[min_idx];
+        temp = images[min_idx];
         images[min_idx] = images[i];
         images[i] = temp;
     }
-}
 
-unsigned char** lol(unsigned char** image, Size imsize){
 
-    image = pad(image, &imsize);
-    image = sobel(image, imsize, false);
-    image = threshold(image, imsize, 5);
-    image = unpad(image, &imsize);
-    return image;
-}
+    int nbr_2 = (int)(nbr_images/2);
 
-int main(int argc, char **argv){
+    for(int i = 0; i < nbr_2; i++){
+        images[i].image = pad(images[i].image, &imsize);
+        images[i].image = sobel(images[i].image, imsize, false);
+        images[i].image = threshold(images[i].image, imsize, 5);
+        images[i].image = unpad(images[i].image, &imsize);
 
-    clock_t start;
-    double elapsed_time;
-    Size imsize = { .rows = 200, .cols = 200};
+        images[nbr_images - 1 - i].image = pad(images[nbr_images - 1 - i].image, &imsize);
+        images[nbr_images - 1 - i].image = sobel(images[nbr_images - 1 - i].image, imsize, false);
+        images[nbr_images - 1 - i].image = threshold(images[nbr_images - 1 - i].image, imsize, 5);
+        images[nbr_images - 1 - i].image = unpad(images[nbr_images - 1 - i].image, &imsize);
 
-    start = clock();
 
-    int nbr_images = 100;
-    Image* images_doubles = malloc((int)(nbr_images/2) * sizeof(Image));
-    Image* images = load_many(nbr_images);
-    image_sort(images, nbr_images);
+        images_doubles[nbr_2 - 1 - i].image = diff(images[i].image, images[nbr_images - 1 - i].image, imsize);
+        images_doubles[nbr_2 - 1 - i].intensity = abs((images[i].intensity - images[nbr_images - 1 - i].intensity));
 
-    for(int i = 0; i < (int)(nbr_images/2); i++){
-        images_doubles[i].image = diff(lol(images[i*2].image, imsize), lol(images[i*2 + 1].image, imsize), imsize);
-        images_doubles[i].intensity = (int)((images[i*2].intensity + images[i*2 + 1].intensity)/2);
-        if(i == 0) print_arr(images_doubles[i].image, imsize);
-        images_doubles[i].noise = calc_noise(images_doubles[i].image, imsize);
-        delete_arr(images[i*2].image, imsize);
-        delete_arr(images[i*2 + 1].image, imsize);
+        noise = 0;
+        for(int k = 0; k < imsize.rows; k++){
+            for(int j = 0; j < imsize.cols; j++){
+                if(images_doubles[nbr_2 - 1 - i].image[k][j] > 0){
+                    noise++;
+                }
+            }
+        }
+        images_doubles[nbr_2 - 1 - i].noise = noise;
+
+        delete_arr(images[i].image, imsize);
+        delete_arr(images[nbr_images - 1 - i].image, imsize);
     }
     free(images);
+
+    //image_sort(images_doubles, (int)(nbr_images/2));
 
     printf("Intensities:\n");
     for(int i = 0; i < (int)(nbr_images/2); i++){
@@ -448,8 +435,18 @@ int main(int argc, char **argv){
         else printf("%d, ", images_doubles[i].noise);
     }
     printf("\n");
-    //many_images();
-    //one_image();
+}
+
+int main(int argc, char **argv){
+
+    clock_t start;
+    double elapsed_time;
+    Size imsize = { .rows = 200, .cols = 200};
+    int decision_floor = 4000;
+
+    start = clock();
+
+    calc_noise_floor(imsize);
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 
