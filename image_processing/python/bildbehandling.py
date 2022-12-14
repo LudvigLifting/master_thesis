@@ -11,7 +11,7 @@ import math
 
 def dump_csv(image: np.ndarray, filename: str) -> None:
 
-    image.tofile(str(pathlib.Path(__file__).parent.resolve()) + "/../C/many/" + filename, sep=' ', format='%d')
+    image.tofile(str(pathlib.Path(__file__).parent.resolve()) + filename, sep=' ', format='%d')
 
 def histo(image: np.ndarray, name: str="") -> None:
 
@@ -274,39 +274,40 @@ def example():
 
     # files = [str(0) + ".jpg", str(70) + ".jpg"]
     # folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/many/"
-    files = ["ext0/200x200.jpg", "ext4/200x200.jpg"]
-    folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/"
+    files = ["/../../test2.jpg", "/../../test.jpg"]
+    folder = str(pathlib.Path(__file__).parent.resolve())
     images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
     
-    dump_csv(images[0])
-    reference = images[0] #cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
-    image = images[1] #cv2.GaussianBlur(images[1],(3,3),cv2.BORDER_DEFAULT)
+    dump_csv(images[0], "reference.csv")
+    dump_csv(images[1], "test.csv")
+    # reference = images[0] #cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
+    # image = images[1] #cv2.GaussianBlur(images[1],(3,3),cv2.BORDER_DEFAULT)
 
-    plt.figure("Reference image")
-    plt.subplot(2, 1, 1)
-    plt.imshow(reference, cmap="gray")
-    plt.subplot(2, 1, 2)
-    plt.imshow(image, cmap="gray")
+    # plt.figure("Reference image")
+    # plt.subplot(2, 1, 1)
+    # plt.imshow(reference, cmap="gray")
+    # plt.subplot(2, 1, 2)
+    # plt.imshow(image, cmap="gray")
 
-    reference = cv2.Sobel(reference, cv2.CV_8U, 1, 0, ksize=3)
-    image = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
+    # reference = cv2.Sobel(reference, cv2.CV_8U, 1, 0, ksize=3)
+    # image = cv2.Sobel(image, cv2.CV_8U, 1, 0, ksize=3)
     
-    plt.figure("Sobel")
-    plt.imshow(image, cmap="gray")
+    # plt.figure("Sobel")
+    # plt.imshow(image, cmap="gray")
 
-    reference = sobel_threshold(reference, "adaptive")
-    image = sobel_threshold(image, "adaptive")
+    # reference = sobel_threshold(reference, "adaptive")
+    # image = sobel_threshold(image, "adaptive")
 
-    plt.figure("Thresholding")
-    plt.imshow(image, cmap="gray")
+    # plt.figure("Thresholding")
+    # plt.imshow(image, cmap="gray")
 
-    dif = diff(reference, image)
-    dif = filter_dots(dif, 2)
+    # dif = diff(reference, image)
+    # dif = filter_dots(dif, 2)
 
-    plt.figure("Diff image")
-    plt.imshow(dif, cmap="gray")
+    # plt.figure("Diff image")
+    # plt.imshow(dif, cmap="gray")
 
-    plt.show()
+    # plt.show()
 
 def test_sobel():
 
@@ -328,7 +329,7 @@ def dump_many():
         dump_csv(image, str(i) + ".csv")
 
 def main():
-    dump_many()
+    example()
     exit()
     #pixelcalc()
     dir_path = str(pathlib.Path(__file__).parent.resolve())

@@ -446,7 +446,25 @@ int main(int argc, char **argv){
 
     start = clock();
 
-    calc_noise_floor(imsize);
+    char** reference = create_arr(imsize, true);
+    char** test = create_arr(imsize, true);
+    char** dif = create_arr(imsize, true);
+
+    reference = load_file(imsize, "/../python/pythonreference.csv");
+    test = load_file(imsize, "/../python/pythontest.csv");
+
+    reference = pad(reference, &imsize);
+    test = pad(test, &imsize);
+    reference = sobel(reference, imsize, false);
+    test = sobel(test, imsize, false);
+    reference = threshold(reference, imsize, 5);
+    test = threshold(test, imsize, 5);
+    reference = unpad(reference, &imsize);
+    test = unpad(test, &imsize);
+
+    dif = diff(reference, test, imsize);
+
+    export_csv(dif, imsize, "RESULT.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 
