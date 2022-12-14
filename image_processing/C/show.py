@@ -4,7 +4,7 @@ import csv
 import pathlib
 
 def main():
-    with open(str(pathlib.Path(__file__).parent.resolve()) + "/out/0.csv") as csvfile:
+    with open(str(pathlib.Path(__file__).parent.resolve()) + "/pythonreference.csv") as csvfile:
         read = csv.reader(csvfile, delimiter=' ')
 
         buffer = list(read)

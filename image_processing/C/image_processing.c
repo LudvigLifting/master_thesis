@@ -446,25 +446,26 @@ int main(int argc, char **argv){
 
     start = clock();
 
-    char** reference = create_arr(imsize, true);
-    char** test = create_arr(imsize, true);
-    char** dif = create_arr(imsize, true);
+    unsigned char** reference = create_arr(imsize, true);
+    unsigned char** test = create_arr(imsize, true);
+    unsigned char** dif = create_arr(imsize, true);
 
-    reference = load_file(imsize, "/../python/pythonreference.csv");
-    test = load_file(imsize, "/../python/pythontest.csv");
+    reference = load_file(imsize, "/pythonreference.csv");
+    test = load_file(imsize, "/pythontest.csv");
 
     reference = pad(reference, &imsize);
-    test = pad(test, &imsize);
     reference = sobel(reference, imsize, false);
-    test = sobel(test, imsize, false);
-    reference = threshold(reference, imsize, 5);
-    test = threshold(test, imsize, 5);
+    reference = threshold(reference, imsize, 1);
     reference = unpad(reference, &imsize);
+    export_csv(reference, imsize, "/RESULT1.csv");
+    test = pad(test, &imsize);
+    test = sobel(test, imsize, false);
+    test = threshold(test, imsize, 1);
     test = unpad(test, &imsize);
-
+    export_csv(test, imsize, "/RESULT2.csv");
     dif = diff(reference, test, imsize);
 
-    export_csv(dif, imsize, "RESULT.csv");
+    export_csv(dif, imsize, "/RESULT.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 

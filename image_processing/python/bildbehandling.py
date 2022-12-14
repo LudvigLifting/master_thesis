@@ -277,7 +277,7 @@ def example():
     files = ["/../../test2.jpg", "/../../test.jpg"]
     folder = str(pathlib.Path(__file__).parent.resolve())
     images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
-    
+    images = np.array(images)
     dump_csv(images[0], "reference.csv")
     dump_csv(images[1], "test.csv")
     # reference = images[0] #cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
