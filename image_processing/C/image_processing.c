@@ -260,6 +260,36 @@ unsigned char** diff(unsigned char** ref, unsigned char** test, Size imsize){
     return difference;
 }
 
+unsigned char** filter_dots(unsigned char** image, Size size){
+
+    unsigned char** filtered = create_arr(size, false);
+    int sum = 0;
+
+    for(int i = 1; i < size.rows - 1; i++){
+        for(int j = 1; j < size.cols - 1; j++){
+            
+            if(image[i][j] < 255){
+                //Nodot
+                filtered[i][j] = image[i][j];
+            }
+            else{
+                //dot
+                sum = image[i-1][j-1] + image[i-1][j] + image[i-1][j+1] + image[i][j-1] + image[i][j+1] + image[i+1][j-1] + image[i+1][j] + image[i+1][j+1];
+                if(sum <= 255){
+                    //unimportant dot
+                    filtered[i][j] = 0;                    
+                }
+                else{
+                    //important dot
+                    filtered[i][j] = image[i][j];
+                }
+            }
+        }
+    }
+
+    return filtered; 
+}
+
 bool decision(unsigned char** diff, Size size, int floor){
 
     int nbr = 0;
@@ -450,22 +480,25 @@ int main(int argc, char **argv){
     unsigned char** test = create_arr(imsize, true);
     unsigned char** dif = create_arr(imsize, true);
 
-    reference = load_file(imsize, "/pythonreference.csv");
-    test = load_file(imsize, "/pythontest.csv");
+    reference = load_file(imsize, "/test0.csv");
+    test = load_file(imsize, "/test1.csv");
 
     reference = pad(reference, &imsize);
     reference = sobel(reference, imsize, false);
-    reference = threshold(reference, imsize, 1);
+    reference = threshold(reference, imsize, 5);
     reference = unpad(reference, &imsize);
     export_csv(reference, imsize, "/RESULT1.csv");
     test = pad(test, &imsize);
     test = sobel(test, imsize, false);
-    test = threshold(test, imsize, 1);
+    test = threshold(test, imsize, 5);
     test = unpad(test, &imsize);
     export_csv(test, imsize, "/RESULT2.csv");
     dif = diff(reference, test, imsize);
 
     export_csv(dif, imsize, "/RESULT.csv");
+
+    dif = filter_dots(dif, imsize);
+    export_csv(dif, imsize, "/RESULT_FILTERED.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 

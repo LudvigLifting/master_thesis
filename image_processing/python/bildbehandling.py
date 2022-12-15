@@ -273,13 +273,15 @@ def calc_noise_floor():
 def example():
 
     # files = [str(0) + ".jpg", str(70) + ".jpg"]
-    # folder = str(pathlib.Path(__file__).parent.resolve()) + "/../pictures/many/"
-    files = ["/../../test2.jpg", "/../../test.jpg"]
+    # files = ["/../Photoshopped/normal.jpg", "/../Photoshopped/lagmit.jpg", "/../Photoshopped/laglag.jpg", 
+    #          "/../Photoshopped/laghog.jpg", "/../Photoshopped/hogmit.jpg", "/../Photoshopped/hoglag.jpg", 
+    #          "/../Photoshopped/hoghog.jpg"]
+    files = ["/../../test.jpg", "/../../test2.jpg"]
     folder = str(pathlib.Path(__file__).parent.resolve())
-    images = [cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files]
-    images = np.array(images)
-    dump_csv(images[0], "reference.csv")
-    dump_csv(images[1], "test.csv")
+    images = np.array([cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files])
+    
+    for i, image in enumerate(images):
+        dump_csv(image, f"/test{i}.csv")
     # reference = images[0] #cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
     # image = images[1] #cv2.GaussianBlur(images[1],(3,3),cv2.BORDER_DEFAULT)
 
