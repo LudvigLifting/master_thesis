@@ -36,10 +36,10 @@ def show_one(file: str):
     plt.show()
 
 def main():
-    files = ["/test0.csv", "/test1.csv", "/RESULT1.csv", "/RESULT2.csv", "/RESULT.csv", "/RESULT_FILTERED.csv"]
-    file = "/many_diffs/1.csv"
-    show_one(file)
-    #show_many(files)
+    files = ["/test0.csv", "/test1.csv", "/SOBEL1.csv", "/SOBEL2.csv", "/DIFF.csv", "/RESULT_FILTERED2.csv"]
+    file = "/RESULT_FILTERED2.csv"
+    #show_one(file)
+    show_many(files)
 
 if __name__ == '__main__':
     main()

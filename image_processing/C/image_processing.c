@@ -486,31 +486,33 @@ int main(int argc, char **argv){
 
     start = clock();
 
-    calc_noise_floor(imsize);
+    //calc_noise_floor(imsize);
 
-    // unsigned char** reference = create_arr(imsize, true);
-    // unsigned char** test = create_arr(imsize, true);
-    // unsigned char** dif = create_arr(imsize, true);
+    unsigned char** reference = create_arr(imsize, true);
+    unsigned char** test = create_arr(imsize, true);
+    unsigned char** dif = create_arr(imsize, true);
 
-    // reference = load_file(imsize, "/test0.csv");
-    // test = load_file(imsize, "/test1.csv");
+    reference = load_file(imsize, "/test2.csv");
+    test = load_file(imsize, "/test3.csv");
 
-    // reference = pad(reference, &imsize);
-    // reference = sobel(reference, imsize, false);
-    // reference = threshold(reference, imsize, 5);
-    // reference = unpad(reference, &imsize);
-    // export_csv(reference, imsize, "/RESULT1.csv");
-    // test = pad(test, &imsize);
-    // test = sobel(test, imsize, false);
-    // test = threshold(test, imsize, 5);
-    // test = unpad(test, &imsize);
-    // export_csv(test, imsize, "/RESULT2.csv");
-    // dif = diff(reference, test, imsize);
+    reference = pad(reference, &imsize);
+    reference = sobel(reference, imsize, false);
+    reference = threshold(reference, imsize, 5);
+    reference = unpad(reference, &imsize);
+    export_csv(reference, imsize, "/SOBEL1.csv");
+    test = pad(test, &imsize);
+    test = sobel(test, imsize, false);
+    test = threshold(test, imsize, 5);
+    test = unpad(test, &imsize);
+    export_csv(test, imsize, "/SOBEL2.csv");
+    dif = diff(reference, test, imsize);
+    export_csv(dif, imsize, "/DIFF.csv");
 
-    // export_csv(dif, imsize, "/RESULT.csv");
 
-    // dif = filter_dots(dif, imsize);
-    // export_csv(dif, imsize, "/RESULT_FILTERED.csv");
+    dif = pad(dif, &imsize);
+    dif = filter_dots(dif, imsize);
+    dif = unpad(dif, &imsize);
+    export_csv(dif, imsize, "/RESULT_FILTERED2.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 
