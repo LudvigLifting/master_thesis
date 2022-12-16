@@ -309,7 +309,7 @@ void process(char file[], char ref[], char output[]){
     difference = filter_dots(difference, imsize);
     difference = unpad(difference, &imsize);
     decision = decide(difference, imsize, 100);
-    printf("Decision is: %d", decision);
+    printf("Decision is: %d\n", decision);
 
     export_csv(difference, imsize, output);
     
