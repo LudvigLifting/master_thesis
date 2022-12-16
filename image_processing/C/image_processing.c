@@ -382,7 +382,6 @@ void one_image(){
 
 void calc_noise_floor(Size imsize){
 
-
     int nbr_images = 100;
     Image* images_doubles = malloc((int)(nbr_images/2) * sizeof(Image));
     Image* images = malloc(nbr_images * sizeof(Image));
@@ -433,7 +432,18 @@ void calc_noise_floor(Size imsize){
 
         images_doubles[nbr_2 - 1 - i].image = diff(images[i].image, images[nbr_images - 1 - i].image, imsize);
         images_doubles[nbr_2 - 1 - i].intensity = abs((images[i].intensity - images[nbr_images - 1 - i].intensity));
+        images_doubles[nbr_2 - 1 - i].image = pad(images_doubles[nbr_2 - 1 - i].image, &imsize);
+        images_doubles[nbr_2 - 1 - i].image = filter_dots(images_doubles[nbr_2 - 1 - i].image, imsize);
+        images_doubles[nbr_2 - 1 - i].image = unpad(images_doubles[nbr_2 - 1 - i].image, &imsize);
 
+        char folder[100] = "/many_diffs/";
+        char name[2];
+        sprintf(name, "%d", i);
+        strcat(folder, name);
+        char ending[] = ".csv";
+        strcat(folder, ending);
+
+        export_csv( images_doubles[nbr_2 - 1 - i].image, imsize, folder);
         noise = 0;
         for(int k = 0; k < imsize.rows; k++){
             for(int j = 0; j < imsize.cols; j++){
@@ -476,29 +486,31 @@ int main(int argc, char **argv){
 
     start = clock();
 
-    unsigned char** reference = create_arr(imsize, true);
-    unsigned char** test = create_arr(imsize, true);
-    unsigned char** dif = create_arr(imsize, true);
+    calc_noise_floor(imsize);
 
-    reference = load_file(imsize, "/test0.csv");
-    test = load_file(imsize, "/test1.csv");
+    // unsigned char** reference = create_arr(imsize, true);
+    // unsigned char** test = create_arr(imsize, true);
+    // unsigned char** dif = create_arr(imsize, true);
 
-    reference = pad(reference, &imsize);
-    reference = sobel(reference, imsize, false);
-    reference = threshold(reference, imsize, 5);
-    reference = unpad(reference, &imsize);
-    export_csv(reference, imsize, "/RESULT1.csv");
-    test = pad(test, &imsize);
-    test = sobel(test, imsize, false);
-    test = threshold(test, imsize, 5);
-    test = unpad(test, &imsize);
-    export_csv(test, imsize, "/RESULT2.csv");
-    dif = diff(reference, test, imsize);
+    // reference = load_file(imsize, "/test0.csv");
+    // test = load_file(imsize, "/test1.csv");
 
-    export_csv(dif, imsize, "/RESULT.csv");
+    // reference = pad(reference, &imsize);
+    // reference = sobel(reference, imsize, false);
+    // reference = threshold(reference, imsize, 5);
+    // reference = unpad(reference, &imsize);
+    // export_csv(reference, imsize, "/RESULT1.csv");
+    // test = pad(test, &imsize);
+    // test = sobel(test, imsize, false);
+    // test = threshold(test, imsize, 5);
+    // test = unpad(test, &imsize);
+    // export_csv(test, imsize, "/RESULT2.csv");
+    // dif = diff(reference, test, imsize);
 
-    dif = filter_dots(dif, imsize);
-    export_csv(dif, imsize, "/RESULT_FILTERED.csv");
+    // export_csv(dif, imsize, "/RESULT.csv");
+
+    // dif = filter_dots(dif, imsize);
+    // export_csv(dif, imsize, "/RESULT_FILTERED.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 
