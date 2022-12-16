@@ -14,14 +14,6 @@ struct Size {
 
 typedef struct Size Size;
 
-struct Image {
-    unsigned char** image;
-    int intensity;
-    int noise;
-};
-
-typedef struct Image Image;
-
 //Lite oklart om denna funkar
 void delete_arr(unsigned char** arr, Size size){
 
@@ -155,49 +147,36 @@ unsigned char** load_file(Size imsize, char fileName[]){
 unsigned char** pad(unsigned char** image, Size *imsize){
 
     //Update imsize and allocate new expanded array
-    imsize->rows += 2;
-    imsize->cols += 2;
-    unsigned char** expanded = create_arr(*imsize, false); //calloc här, kanske är snabbare att köra malloc och sen manuellt lägga till nollor
+    Size newSize = { .rows = imsize->rows + 2, .cols = imsize->cols + 2 };
+    unsigned char** expanded = create_arr(newSize, false);
 
-    for(int i = 0; i < imsize->rows - 2; i++){
+    for(int i = 0; i < imsize->rows; i++){
 
-        memcpy(&expanded[i + 1][1], image[i], (size_t)(imsize->cols*sizeof(char) - 2));
+        memcpy(&expanded[i + 1][1], image[i], (size_t)(imsize->cols*sizeof(char)));
     }
 
-    //Oklart om vi ska göra en free här
-    // Size size = { .rows=imsize->rows, .cols=imsize->cols };
-    // delete_arr(image, size);
+    delete_arr(image, *imsize);
+    imsize->rows += 2;
+    imsize->cols += 2;
+
     return expanded;
 }
 
 unsigned char** unpad(unsigned char** image, Size *imsize){
 
+    Size newSize = { .rows = imsize->rows - 2, .cols = imsize->cols - 2 };
+    unsigned char** reduced = create_arr(newSize, false);
+
+    for(int i = 0; i < newSize.rows; i++){
+
+        memcpy(reduced[i], &image[i + 1][1], newSize.cols*sizeof(char));
+    }
+
+    delete_arr(image, *imsize);
     imsize->rows -= 2;
     imsize->cols -= 2;
-    unsigned char** reduced = create_arr(*imsize, false);
 
-    for(int i = 0; i < imsize->rows; i++){
-
-        memcpy(reduced[i], &image[i + 1][1], imsize->cols*sizeof(char));
-    }
-
-    //Oklart om vi ska göra en free här
-    // Size size = { .rows=imsize->rows, .cols=imsize->cols };
-    // delete_arr(image, size);
     return reduced;
-}
-
-//Kanske inte behövs alls, blir typ 3ggr så långsamt med en algoritm + subarray
-unsigned char** subarray(Size ker_size, unsigned char** image, int row, int col){
-
-    unsigned char** sub = create_arr(ker_size, true);
-    
-    for(int i = 0; i < ker_size.rows; i++){
-
-        memcpy(sub[i], &image[row + i - 1][col - 1], ker_size.cols*sizeof(char));
-    }
-
-    return sub;
 }
 
 unsigned char** sobel(unsigned char** image, Size imsize, bool xy){
@@ -220,7 +199,6 @@ unsigned char** sobel(unsigned char** image, Size imsize, bool xy){
         }
     }
     
-    //Oklart om vi ska göra en free här
     delete_arr(image, imsize);
     return sobeld;
 }
@@ -240,7 +218,6 @@ unsigned char** threshold(unsigned char** image, Size imsize, int offset){
         }
     }
 
-    //Oklart om vi ska göra en free här
     delete_arr(image, imsize);
     return thresholded;
 }
@@ -255,8 +232,6 @@ unsigned char** diff(unsigned char** ref, unsigned char** test, Size imsize){
         }
     }
     
-    //Oklart om vi ska göra en free här
-    //delete_arr(test);
     return difference;
 }
 
@@ -287,10 +262,11 @@ unsigned char** filter_dots(unsigned char** image, Size size){
         }
     }
 
+    delete_arr(image, size);
     return filtered; 
 }
 
-bool decision(unsigned char** diff, Size size, int floor){
+bool decide(unsigned char** diff, Size size, int floor){
 
     int nbr = 0;
     bool decide = false;
@@ -312,193 +288,45 @@ bool decision(unsigned char** diff, Size size, int floor){
     return decide;
 }
 
-int calc_avg_intensity(unsigned char** image, Size size){
-
-    int intensity = 0;
-
-    for(int i = 0; i < size.rows; i++){
-        for(int j = 0; j < size.cols; j++){
-            intensity += image[i][j];
-        }
-    }
-
-    intensity = intensity/(size.rows*size.cols);
-
-    return intensity;
-}
-
-void process(char file[], char output[]){
+void process(char file[], char ref[], char output[]){
 
     Size imsize = { .rows = 200, .cols = 200 };
-    unsigned char** image = create_arr(imsize, false);
+    unsigned char** reference;
+    unsigned char** image;
+    unsigned char** difference = create_arr(imsize, true);
+    bool decision;
 
     image = load_file(imsize, file);
     image = pad(image, &imsize);
     image = sobel(image, imsize, false);
     image = threshold(image, imsize, 5);
+    
     image = unpad(image, &imsize);
 
-    export_csv(image, imsize, output);
+    reference = load_file(imsize, ref);
+    difference = diff(reference, image, imsize);
+    difference = pad(difference, &imsize);
+    difference = filter_dots(difference, imsize);
+    difference = unpad(difference, &imsize);
+    decision = decide(difference, imsize, 100);
+    printf("Decision is: %d", decision);
+
+    export_csv(difference, imsize, output);
     
     if(image != NULL){
         delete_arr(image, imsize);
     }
-}
-
-void process_many_images(){
-
-    char file[13] = "/many/";
-    char out[12] = "/out/";
-
-    for(int i = 0; i < 100; i++){
-
-        sprintf(&file[6], "%d", i);
-        sprintf(&out[5], "%d", i);
-        strcat(file, ".csv");
-        strcat(out, ".csv");
-        process(file, out);
-
-        file[6] = '\0';
-        out[5] = '\0';
-    }
-}
-
-void one_image(){
-    Size imsize = { .rows = 200, .cols = 200 };
-    unsigned char** image = create_arr(imsize, false);
-
-    image = load_file(imsize, "/numbers.csv");
-    image = pad(image, &imsize);
-    image = sobel(image, imsize, false);
-    image = threshold(image, imsize, 5);
-    image = unpad(image, &imsize);
-    print_arr(image, imsize);
-    export_csv(image, imsize, "output.csv");
-
-    if(image != NULL){
-        delete_arr(image, imsize);
-    }
-}
-
-void calc_noise_floor(Size imsize){
-
-
-    int nbr_images = 100;
-    Image* images_doubles = malloc((int)(nbr_images/2) * sizeof(Image));
-    Image* images = malloc(nbr_images * sizeof(Image));
-    Image temp;
-    int min_idx, i, j, noise;
-    unsigned char** temp_img;
-
-    char file[13] = "/many/";
-
-    for(int i = 0; i < nbr_images; i++){
-
-        sprintf(&file[6], "%d", i);
-        strcat(file, ".csv");
-
-        temp_img = load_file(imsize, file);
-        images[i].image = temp_img;
-        images[i].intensity = calc_avg_intensity(images[i].image, imsize);
-        file[6] = '\0';
-    }
-
-    //Sorting
-    for (i = 0; i < nbr_images - 1; i++) {
-
-        min_idx = i;
-        for (j = i + 1; j < nbr_images; j++)
-            if (images[j].intensity < images[min_idx].intensity)
-                min_idx = j;
- 
-        temp = images[min_idx];
-        images[min_idx] = images[i];
-        images[i] = temp;
-    }
-
-
-    int nbr_2 = (int)(nbr_images/2);
-
-    for(int i = 0; i < nbr_2; i++){
-        images[i].image = pad(images[i].image, &imsize);
-        images[i].image = sobel(images[i].image, imsize, false);
-        images[i].image = threshold(images[i].image, imsize, 5);
-        images[i].image = unpad(images[i].image, &imsize);
-
-        images[nbr_images - 1 - i].image = pad(images[nbr_images - 1 - i].image, &imsize);
-        images[nbr_images - 1 - i].image = sobel(images[nbr_images - 1 - i].image, imsize, false);
-        images[nbr_images - 1 - i].image = threshold(images[nbr_images - 1 - i].image, imsize, 5);
-        images[nbr_images - 1 - i].image = unpad(images[nbr_images - 1 - i].image, &imsize);
-
-
-        images_doubles[nbr_2 - 1 - i].image = diff(images[i].image, images[nbr_images - 1 - i].image, imsize);
-        images_doubles[nbr_2 - 1 - i].intensity = abs((images[i].intensity - images[nbr_images - 1 - i].intensity));
-
-        noise = 0;
-        for(int k = 0; k < imsize.rows; k++){
-            for(int j = 0; j < imsize.cols; j++){
-                if(images_doubles[nbr_2 - 1 - i].image[k][j] > 0){
-                    noise++;
-                }
-            }
-        }
-        images_doubles[nbr_2 - 1 - i].noise = noise;
-
-        delete_arr(images[i].image, imsize);
-        delete_arr(images[nbr_images - 1 - i].image, imsize);
-    }
-    free(images);
-
-    //image_sort(images_doubles, (int)(nbr_images/2));
-
-    printf("Intensities:\n");
-    for(int i = 0; i < (int)(nbr_images/2); i++){
-        if(i == 0) printf("[");
-        else if(i == (int)(nbr_images/2) - 1) printf("%d]", images_doubles[i].intensity);
-        else printf("%d, ", images_doubles[i].intensity);
-    }
-    
-    printf("\nNoise:\n");
-    for(int i = 0; i < (int)(nbr_images/2); i++){
-        if(i == 0) printf("[");
-        else if(i == (int)(nbr_images/2) - 1) printf("%d]", images_doubles[i].noise);
-        else printf("%d, ", images_doubles[i].noise);
-    }
-    printf("\n");
 }
 
 int main(int argc, char **argv){
 
     clock_t start;
     double elapsed_time;
-    Size imsize = { .rows = 200, .cols = 200};
-    int decision_floor = 4000;
 
     start = clock();
 
-    unsigned char** reference = create_arr(imsize, true);
-    unsigned char** test = create_arr(imsize, true);
-    unsigned char** dif = create_arr(imsize, true);
-
-    reference = load_file(imsize, "/test0.csv");
-    test = load_file(imsize, "/test1.csv");
-
-    reference = pad(reference, &imsize);
-    reference = sobel(reference, imsize, false);
-    reference = threshold(reference, imsize, 5);
-    reference = unpad(reference, &imsize);
-    export_csv(reference, imsize, "/RESULT1.csv");
-    test = pad(test, &imsize);
-    test = sobel(test, imsize, false);
-    test = threshold(test, imsize, 5);
-    test = unpad(test, &imsize);
-    export_csv(test, imsize, "/RESULT2.csv");
-    dif = diff(reference, test, imsize);
-
-    export_csv(dif, imsize, "/RESULT.csv");
-
-    dif = filter_dots(dif, imsize);
-    export_csv(dif, imsize, "/RESULT_FILTERED.csv");
+    //CODE HERE//
+    process("/test1.csv", "/reference.csv", "/out.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 
@@ -511,10 +339,6 @@ int main(int argc, char **argv){
     else{
         printf("Execution time: %.3fus\n", 1000000*elapsed_time);
     }
-    
-    // if(image != NULL){
-    //     delete_arr(image, imsize);
-    // }
 
     return 0;
 }

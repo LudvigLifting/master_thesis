@@ -281,7 +281,7 @@ def example():
     images = np.array([cv2.cvtColor(cv2.imread(folder + file), cv2.COLOR_BGR2GRAY) for file in files])
     
     for i, image in enumerate(images):
-        dump_csv(image, f"/test{i}.csv")
+        dump_csv(image, f"/../C/test{i}.csv")
     # reference = images[0] #cv2.GaussianBlur(images[0],(3,3),cv2.BORDER_DEFAULT)
     # image = images[1] #cv2.GaussianBlur(images[1],(3,3),cv2.BORDER_DEFAULT)
 
