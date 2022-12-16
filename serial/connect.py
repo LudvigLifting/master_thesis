@@ -33,7 +33,7 @@ def ver_windows():
             print(response)
 
         #msg = f"AT+MSGHEX={1<<(8*i)}\n"
-        msg = "AT+MSGHEX=1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345\n"
+        msg = "AT+MSGHEX=123456789012345678901234567890\n"
         ser.write(str.encode(msg))
         response =  ser.readline().decode('UTF-8').rstrip()
         print (response)
