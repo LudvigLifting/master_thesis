@@ -5,7 +5,8 @@ import pathlib
 
 def show_many(files: list):
     
-    plt.figure("Many")
+    
+    fig = plt.figure("image " + files[0][22])
     for i, file in enumerate(files):
         with open(str(pathlib.Path(__file__).parent.resolve()) + file) as csvfile:
             read = csv.reader(csvfile, delimiter=' ')
@@ -16,8 +17,10 @@ def show_many(files: list):
         image = np.array(buffer, dtype=np.uint8)
         print(f"{file}:\nnbr pixels: {(np.sum(image) / 255)}, {(np.sum(image) / 255)/40000}%")
         image = np.reshape(image, (200, 200))
-        plt.subplot(2, 3, i+1)
+        fig.add_subplot(2, 3, i+1)
         plt.imshow(image, cmap="gray")
+        plt.axis('off')
+        plt.title(file[24:len(file)-4])
     plt.show()
     
 def show_one(file: str):
