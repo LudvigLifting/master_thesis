@@ -20,7 +20,8 @@ def show_many(files: list):
         fig.add_subplot(2, 3, i+1)
         plt.imshow(image, cmap="gray")
         plt.axis('off')
-        plt.title(file[24:len(file)-4])
+        plt.title(f"Test image {i+1}")
+        plt.savefig()
     plt.show()
     
 def show_one(file: str):
@@ -40,7 +41,7 @@ def show_one(file: str):
 
 def main():
     things = ["sobel.csv", "threshold.csv", "diff_unfiltered.csv", "diff_filtered.csv"]
-    files = [[f"/results_photoshopped/{i}/" + thing for thing in things] for i in range(2, 8, 1)]
+    files = [[f"/results_photoshopped/{i}/" + thing for i in range(2, 8, 1)] for thing in things]
     file = "/results_photoshopped/diff2.csv"
     #show_one(file)
     for row in files:
