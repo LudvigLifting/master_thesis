@@ -21,7 +21,7 @@ def show_many(files: list):
         plt.imshow(image, cmap="gray")
         plt.axis('off')
         plt.title(f"Test image {i+1}")
-        plt.savefig()
+        fig.savefig(str(pathlib.Path(__file__).parent.resolve()) + file[:21] + file[23:len(file)-4] + ".png")
     plt.show()
     
 def show_one(file: str):
