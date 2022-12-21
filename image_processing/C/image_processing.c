@@ -290,7 +290,7 @@ unsigned char** filter_dots(unsigned char** image, Size size){
     return filtered; 
 }
 
-bool decision(unsigned char** diff, Size size, int floor){
+bool decide(unsigned char** diff, Size size, int floor){
 
     int nbr = 0;
     bool decide = false;
@@ -367,13 +367,12 @@ void one_image(){
     Size imsize = { .rows = 200, .cols = 200 };
     unsigned char** image = create_arr(imsize, false);
 
-    image = load_file(imsize, "/numbers.csv");
+    image = load_file(imsize, "/Photoshopped/New_photoshopped/1.csv");
     image = pad(image, &imsize);
     image = sobel(image, imsize, false);
     image = threshold(image, imsize, 5);
     image = unpad(image, &imsize);
-    print_arr(image, imsize);
-    export_csv(image, imsize, "output.csv");
+    export_csv(image, imsize, "/Photoshopped/New_photoshopped/reference.csv");
 
     if(image != NULL){
         delete_arr(image, imsize);
@@ -477,42 +476,76 @@ void calc_noise_floor(Size imsize){
     printf("\n");
 }
 
+void process_ps(char ref[], char file[], char output[]){
+
+    Size imsize = { .rows = 200, .cols = 200 };
+    unsigned char** reference;
+    unsigned char** image;
+    unsigned char** difference = create_arr(imsize, true);
+    bool decision;
+    char sob[] = "sobel.csv";
+    char th[] = "threshold.csv";
+    char unf[] = "diff_unfiltered.csv";
+    char filt[] = "diff_filtered.csv";
+
+
+    image = load_file(imsize, file);
+    image = pad(image, &imsize);
+    image = sobel(image, imsize, false);
+    image = unpad(image, &imsize);
+    strcat(output, sob);
+    export_csv(image, imsize, output);
+    output[24] = '\0';
+    image = pad(image, &imsize);
+    image = threshold(image, imsize, 5);
+    image = unpad(image, &imsize);
+    strcat(output, th);
+    export_csv(image, imsize, output);
+    output[24] = '\0';
+
+    reference = load_file(imsize, ref);
+    difference = diff(reference, image, imsize);
+    strcat(output, unf);
+    export_csv(difference, imsize, output);
+    output[24] = '\0';
+    difference = pad(difference, &imsize);
+    difference = filter_dots(difference, imsize);
+    difference = unpad(difference, &imsize);
+    strcat(output, filt);
+    export_csv(difference, imsize, output);
+    output[24] = '\0';
+    decision = decide(difference, imsize, 225);
+    printf("Decision is: %d\n", decision);
+    
+    if(image != NULL){
+        delete_arr(image, imsize);
+    }
+}
+
 int main(int argc, char **argv){
 
     clock_t start;
     double elapsed_time;
     Size imsize = { .rows = 200, .cols = 200};
-    int decision_floor = 4000;
+    int decision_floor = 200;
 
     start = clock();
-
-    //calc_noise_floor(imsize);
-
     unsigned char** reference = create_arr(imsize, true);
     unsigned char** test = create_arr(imsize, true);
-    unsigned char** dif = create_arr(imsize, true);
+    char teststring[] = "/Photoshopped/New_photoshopped/0.csv";
+    char output[100] = "/results_photoshopped/1/";
+    char tm[2] = "0\0";
 
-    reference = load_file(imsize, "/test2.csv");
-    test = load_file(imsize, "/test3.csv");
-
-    reference = pad(reference, &imsize);
-    reference = sobel(reference, imsize, false);
-    reference = threshold(reference, imsize, 5);
-    reference = unpad(reference, &imsize);
-    export_csv(reference, imsize, "/SOBEL1.csv");
-    test = pad(test, &imsize);
-    test = sobel(test, imsize, false);
-    test = threshold(test, imsize, 5);
-    test = unpad(test, &imsize);
-    export_csv(test, imsize, "/SOBEL2.csv");
-    dif = diff(reference, test, imsize);
-    export_csv(dif, imsize, "/DIFF.csv");
+    for(int i = 2; i < 8; i++){
+        sprintf(tm, "%d", i);
+        printf("%s\n", tm);
+        teststring[31] = tm[0];
+        output[22] = tm[0];
+        
+        process_ps("/Photoshopped/New_photoshopped/reference.csv", teststring, output);
+    }
 
 
-    dif = pad(dif, &imsize);
-    dif = filter_dots(dif, imsize);
-    dif = unpad(dif, &imsize);
-    export_csv(dif, imsize, "/RESULT_FILTERED2.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 
@@ -525,10 +558,6 @@ int main(int argc, char **argv){
     else{
         printf("Execution time: %.3fus\n", 1000000*elapsed_time);
     }
-    
-    // if(image != NULL){
-    //     delete_arr(image, imsize);
-    // }
 
     return 0;
 }
