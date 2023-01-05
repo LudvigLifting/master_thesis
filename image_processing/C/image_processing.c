@@ -295,23 +295,34 @@ void process(char file[], char ref[], char output[]){
     unsigned char** image;
     unsigned char** difference = create_arr(imsize, true);
     bool decision;
+    int thresh_val = 5;
 
     image = load_file(imsize, file);
     image = pad(image, &imsize);
     image = sobel(image, imsize, false);
-    image = threshold(image, imsize, 5);
-    
     image = unpad(image, &imsize);
+    export_csv(image, imsize, "/figures/sobeled.csv");
+    image = pad(image, &imsize);
+    image = threshold(image, imsize, thresh_val);
+    image = unpad(image, &imsize);
+    export_csv(image, imsize, "/figures/thresholded.csv");
 
     reference = load_file(imsize, ref);
+    reference = pad(reference, &imsize);
+    reference = sobel(reference, imsize, false);
+    reference = threshold(reference, imsize, thresh_val);
+    reference = unpad(reference, &imsize);
+    export_csv(reference, imsize, "/figures/reference.csv");
+
     difference = diff(reference, image, imsize);
+    export_csv(difference, imsize, "/figures/diff_unfiltered.csv");
     difference = pad(difference, &imsize);
     difference = filter_dots(difference, imsize);
     difference = unpad(difference, &imsize);
-    decision = decide(difference, imsize, 100);
+    decision = decide(difference, imsize, 200);
     printf("Decision is: %d\n", decision);
 
-    export_csv(difference, imsize, output);
+    export_csv(difference, imsize, "/figures/diff_filtered.csv");
     
     if(image != NULL){
         delete_arr(image, imsize);
@@ -326,7 +337,7 @@ int main(int argc, char **argv){
     start = clock();
 
     //CODE HERE//
-    process("/test1.csv", "/reference.csv", "/out.csv");
+    process("/test1.csv", "/test0.csv", "/out.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 
