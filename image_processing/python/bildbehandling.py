@@ -323,15 +323,18 @@ def test_sobel():
     
 def dump_many():
     dir_path = str(pathlib.Path(__file__).parent.resolve())
-    folder = "/../pictures/many/"
-    files = [str(i) + ".jpg" for i in range(100)]
-    images = [cv2.cvtColor(cv2.imread(dir_path + folder + file), cv2.COLOR_BGR2GRAY) for file in files]
-    
+    outfolder = "/../C/many/"
+    folder = "/../"
+    files = [str(i) + ".jpg" for i in range(1, 202)]
+    print(dir_path + folder + files[0])
+    images = [cv2.cvtColor(cv2.imread(dir_path + folder + file), cv2.COLOR_BGR2GRAY) for file in files if file != "101.jpg"]
     for i, image in enumerate(images):
-        dump_csv(image, str(i) + ".csv")
+        dump_csv(image, outfolder + str(i) + ".csv")
+    dump_csv(cv2.cvtColor(cv2.imread(dir_path + folder + "ref1.jpg"), cv2.COLOR_BGR2GRAY), outfolder + "ref1" + ".csv")
+    dump_csv(cv2.cvtColor(cv2.imread(dir_path + folder + "ref2.jpg"), cv2.COLOR_BGR2GRAY), outfolder + "ref2" + ".csv")
 
 def main():
-    example()
+    dump_many()
     exit()
     #pixelcalc()
     dir_path = str(pathlib.Path(__file__).parent.resolve())

@@ -37,7 +37,7 @@ def show_one(file: str):
 
 def main():
     files = ["/test0.csv", "/test1.csv", "/RESULT1.csv", "/RESULT2.csv", "/RESULT.csv", "/RESULT_FILTERED.csv"]
-    file = "/test0.csv"
+    file = "/many/99.csv"
     show_one(file)
     #show_many(files)
 

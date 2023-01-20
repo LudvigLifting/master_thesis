@@ -67,6 +67,17 @@ def main():
     plt.title(names[5])
     plt.axis('off')
     plt.savefig(folder + "/figures/diff")
+
+    plt.figure("Two reference images")
+    plt.subplot(1, 2, 1)
+    plt.imshow(load("many/ref1.csv", False), cmap="gray")
+    plt.title("Reference 1")
+    plt.axis('off')    
+    plt.subplot(1, 2, 2)
+    plt.imshow(load("many/ref2.csv", False), cmap="gray")
+    plt.title("Reference 2")
+    plt.axis('off')
+    plt.savefig(folder + "/figures/diff")
     
     plt.show()
 

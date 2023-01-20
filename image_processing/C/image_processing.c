@@ -53,7 +53,7 @@ void export_csv(unsigned char** arr, Size arrsize, char fileName[]){
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
     strcat(cwd, fileName);
-    //printf("Exporting file \"%s\"\n...\n", cwd);
+    printf("Exporting file \"%s\"\n...\n", cwd);
     
     FILE *csv = fopen(cwd, "w");
     
@@ -288,7 +288,7 @@ bool decide(unsigned char** diff, Size size, int floor){
     return decide;
 }
 
-void process(char file[], char ref[], char output[]){
+bool process(char file[], char ref[], char output[]){
 
     Size imsize = { .rows = 200, .cols = 200 };
     unsigned char** reference;
@@ -296,6 +296,8 @@ void process(char file[], char ref[], char output[]){
     unsigned char** difference = create_arr(imsize, true);
     bool decision;
     int thresh_val = 5;
+
+    //printf("File: %s\nReference: %s\nOutput: %s\n", file, ref, output);
 
     image = load_file(imsize, file);
     image = pad(image, &imsize);
@@ -319,14 +321,16 @@ void process(char file[], char ref[], char output[]){
     difference = pad(difference, &imsize);
     difference = filter_dots(difference, imsize);
     difference = unpad(difference, &imsize);
-    decision = decide(difference, imsize, 200);
-    printf("Decision is: %d\n", decision);
+    decision = decide(difference, imsize, 280);
+    //printf("Decision is: %d\n", decision);
 
-    export_csv(difference, imsize, "/figures/diff_filtered.csv");
+    export_csv(difference, imsize, output);
     
     if(image != NULL){
         delete_arr(image, imsize);
     }
+
+    return decision;
 }
 
 int main(int argc, char **argv){
@@ -337,7 +341,7 @@ int main(int argc, char **argv){
     start = clock();
 
     //CODE HERE//
-    process("/test1.csv", "/test0.csv", "/out.csv");
+    process("/many/ref1.csv", "/many/2.csv", "/out.csv");
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 
