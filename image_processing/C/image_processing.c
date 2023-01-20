@@ -303,21 +303,21 @@ bool process(char file[], char ref[], char output[]){
     image = pad(image, &imsize);
     image = sobel(image, imsize, false);
     image = unpad(image, &imsize);
-    export_csv(image, imsize, "/figures/sobeled.csv");
+    //export_csv(image, imsize, "/figures/sobeled.csv");
     image = pad(image, &imsize);
     image = threshold(image, imsize, thresh_val);
     image = unpad(image, &imsize);
-    export_csv(image, imsize, "/figures/thresholded.csv");
+    //export_csv(image, imsize, "/figures/thresholded.csv");
 
     reference = load_file(imsize, ref);
     reference = pad(reference, &imsize);
     reference = sobel(reference, imsize, false);
     reference = threshold(reference, imsize, thresh_val);
     reference = unpad(reference, &imsize);
-    export_csv(reference, imsize, "/figures/reference.csv");
+    //export_csv(reference, imsize, "/figures/reference.csv");
 
     difference = diff(reference, image, imsize);
-    export_csv(difference, imsize, "/figures/diff_unfiltered.csv");
+    //export_csv(difference, imsize, "/figures/diff_unfiltered.csv");
     difference = pad(difference, &imsize);
     difference = filter_dots(difference, imsize);
     difference = unpad(difference, &imsize);
@@ -333,7 +333,7 @@ bool process(char file[], char ref[], char output[]){
     return decision;
 }
 
-int main(int argc, char **argv){
+int main(int argc, char** argv){
 
     clock_t start;
     double elapsed_time;
@@ -341,7 +341,7 @@ int main(int argc, char **argv){
     start = clock();
 
     //CODE HERE//
-    process("/many/ref1.csv", "/many/2.csv", "/out.csv");
+    process(argv[1], argv[2], argv[3]);
 
     elapsed_time = ((double) (clock() - start) / CLOCKS_PER_SEC);
 
